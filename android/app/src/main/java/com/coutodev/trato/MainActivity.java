@@ -1,4 +1,4 @@
-package br.com.coutodev.trato;
+package com.coutodev.trato;
 
 import com.getcapacitor.BridgeActivity;
 

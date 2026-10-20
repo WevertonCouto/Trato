@@ -38,4 +38,4 @@ export async function guardarSessao(r: Response) {
 }
 
 /** Link para a loja (na web, onde não há compra dentro do app). */
-export const LINK_LOJA = import.meta.env.VITE_LINK_LOJA || 'https://play.google.com/store/apps/details?id=br.com.coutodev.trato';
+export const LINK_LOJA = import.meta.env.VITE_LINK_LOJA || 'https://play.google.com/store/apps/details?id=com.coutodev.trato';

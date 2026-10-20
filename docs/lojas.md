@@ -39,7 +39,7 @@ Conta do "economize": 12 × R$ 7,99 = R$ 95,88 por ano; 1 − 59,88 ÷ 95,88 ≈
 1. Crie a conta de desenvolvedor em <https://play.google.com/console>. Pode ser pessoal ou de empresa; para empresa precisa do D-U-N-S.
 2. **Criar app:**
    - nome **Trato** (ou o definitivo), idioma pt-BR, **App**, **Pago ou gratuito: Gratuito**. O app é grátis para baixar e a assinatura é dentro dele.
-3. **Confirme o appId antes de subir o primeiro AAB.** O código usa `br.com.coutodev.trato` (em `capacitor.config.ts` e `android/app/build.gradle`) e, depois de publicado, ele não muda mais.
+3. **appId: `com.coutodev.trato`** (confirmado). Ele está em `capacitor.config.ts` e `android/app/build.gradle`. Depois de publicado, não muda mais.
 4. **Conteúdo do app**, no painel:
    - **Público-alvo:** inclua faixas abaixo de 13 anos. O app entra na **Política para Famílias** (Families Policy).
    - **Segurança dos dados:**
@@ -63,7 +63,7 @@ Conta do "economize": 12 × R$ 7,99 = R$ 95,88 por ano; 1 − 59,88 ÷ 95,88 ≈
 
 1. Crie a conta em <https://app.revenuecat.com> e um **Project** "Trato".
 2. **Ligue a Google Play:**
-   - Adicione um app **Play Store** com o package `br.com.coutodev.trato`.
+   - Adicione um app **Play Store** com o package `com.coutodev.trato`.
    - Siga o guia do próprio RevenueCat para criar a **service account** no Google Cloud, dar acesso a ela no Play Console (Usuários e permissões) e enviar o JSON.
    - Ative as **Real-time developer notifications**: o RevenueCat mostra o tópico Pub/Sub para colar no Play Console.
 3. **Products:** importe `trato_mensal` e `trato_anual`.

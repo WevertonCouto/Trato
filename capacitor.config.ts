@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-// appId definitivo: confirmar com o Weverton antes de publicar (depois de publicado na loja não muda)
+// appId definitivo (confirmado pelo Weverton); depois de publicado na loja não muda
 const config: CapacitorConfig = {
-  appId: 'br.com.coutodev.trato',
+  appId: 'com.coutodev.trato',
   appName: 'Trato',
   webDir: 'web/dist',
   android: { allowMixedContent: false },
