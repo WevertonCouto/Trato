@@ -1,0 +1,11 @@
+node_modules
+web/dist
+data
+android
+docs
+.git
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
