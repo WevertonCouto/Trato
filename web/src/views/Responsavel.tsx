@@ -586,8 +586,8 @@ function Foto({ arquivo, alt, className }: { arquivo: string; alt: string; class
 type InfoPlano = {
   familia_id: string;
   plano: { ativo: boolean; situacao: 'ativa' | 'teste' | 'cancelada' | 'problema_pagamento' | 'expirada' | null; produto: string | null; expira_em: number | null };
-  gratis: { criancas: number; missoes: number };
-  familia: { criancas: number; missoes: number };
+  gratis: { criancas: number; missoes: number | null };
+  familia: { criancas: number; missoes: number | null };
   uso: { criancas: number; missoes: number };
 };
 
@@ -611,7 +611,7 @@ function FaixaPlano({ abrir }: { abrir: () => void }) {
   return (
     <button className="cartao faixa-plano" onClick={abrir}>
       <Icone nome="coroa" />
-      <span><strong>Plano grátis</strong><small>{dados.gratis.criancas} criança e {dados.gratis.missoes} missões. Conheça o Plano Família</small></span>
+      <span><strong>Plano grátis</strong><small>{dados.gratis.criancas} criança. Com o Plano Família, até {dados.familia.criancas}</small></span>
       <Icone nome="seta" />
     </button>
   );
@@ -664,11 +664,11 @@ function TelaPlano({ voltar, conta }: { voltar: () => void; conta: () => void })
       )}
       {d && (
         <div className="cartao plano-compara">
-          <div><small>Grátis</small><strong>{d.gratis.criancas} criança</strong><strong>{d.gratis.missoes} missões cada</strong></div>
-          <div className="destaque-plano"><small>Plano Família</small><strong>até {d.familia.criancas} crianças</strong><strong>missões sem limite</strong></div>
+          <div><small>Grátis</small><strong>{d.gratis.criancas} criança</strong><strong>{d.gratis.missoes === null ? 'missões ilimitadas' : `${d.gratis.missoes} missões cada`}</strong></div>
+          <div className="destaque-plano"><small>Plano Família</small><strong>até {d.familia.criancas} crianças</strong><strong>{d.familia.missoes === null ? 'missões ilimitadas' : `${d.familia.missoes} missões cada`}</strong></div>
         </div>
       )}
-      {d && !d.plano.ativo && (d.uso.criancas > d.gratis.criancas || d.uso.missoes > d.gratis.missoes) && (
+      {d && !d.plano.ativo && (d.uso.criancas > d.gratis.criancas || (d.gratis.missoes !== null && d.uso.missoes > d.gratis.missoes)) && (
         <p className="suave">Nada do que vocês já criaram some: as crianças continuam com as missões de hoje. Só não dá para criar além do plano grátis.</p>
       )}
 

@@ -9,10 +9,11 @@ import { Hono } from 'hono';
 import { exigeAdulto, type Env } from './auth.ts';
 import { db, get, now, run } from './db.ts';
 
-/** Plano grátis: mude aqui. */
-export const PLANO_GRATIS = { criancas: 1, missoes: 3 };
+type Limites = { criancas: number; missoes: number | null }; // missoes: null = ilimitadas
+/** Plano grátis: mude aqui (missões ilimitadas por decisão do Weverton; para limitar, troque null por um número). */
+export const PLANO_GRATIS: Limites = { criancas: 1, missoes: null };
 /** Plano Família (o limite de 6 crianças já é o do app). */
-export const PLANO_FAMILIA = { criancas: 6, missoes: 1000 };
+export const PLANO_FAMILIA: Limites = { criancas: 6, missoes: null };
 
 const cfg = () => ({
   apiKey: process.env.REVENUECAT_API_KEY ?? '',

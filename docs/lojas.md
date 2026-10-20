@@ -15,7 +15,7 @@ O código já está pronto: app Android com Capacitor, compras com RevenueCat, w
   - Tabela `assinaturas`.
   - Rota `POST /api/revenuecat/webhook`, protegida pelo header `Authorization`. Ela confirma cada evento em `GET /subscribers/{id}`.
   - Rota `POST /api/adulto/assinatura/sincronizar`, chamada depois de comprar ou restaurar.
-  - Plano grátis: 1 criança e 3 missões ativas por criança. Para mudar, edite `PLANO_GRATIS` em `src/server/assinatura.ts`.
+  - Plano grátis: 1 criança, missões ilimitadas (o Plano Família libera até 6 crianças). Para mudar, edite `PLANO_GRATIS` em `src/server/assinatura.ts`.
 - **Na web:** aparece "Assine pelo app na Google Play". Não há pagamento por fora.
 - **Regras para apps de crianças:** sem anúncios e sem analytics de terceiros.
   - Política de privacidade: `/privacidade.html`. Termos: `/termos.html`. **São rascunhos: preencha os campos entre colchetes.**

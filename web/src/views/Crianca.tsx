@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, type Aparelho, type PetInfo, type Tarefa, type TarefaDoDia } from '../api.ts';
-import { Barra, Festa, Icone, Modal, Moeda, PinPad, Topo, avisar, useAoVoltar, useCarregar } from '../ui.tsx';
+import { Barra, Festa, Icone, Logo, Modal, Moeda, PinPad, Topo, avisar, useAoVoltar, useCarregar } from '../ui.tsx';
 import { Pet } from '../pet.tsx';
 import { PetVivo, clima, proximaMissao, type Acao } from '../petvivo.tsx';
 import { ligarSom, somLigado, tocar } from '../som.ts';
@@ -41,6 +41,7 @@ export function AppCrianca({ aparelho, mudou }: { aparelho: Aparelho; mudou: () 
       const resto = hoje.filter((t) => t.id !== prox?.id).sort((a, b) => Number(FEITAS.has(a.situacao)) - Number(FEITAS.has(b.situacao)));
       tela = (
         <div className="pagina inicio">
+          <div className="inicio-topo">
           <header className="ola">
             <h1>Oi, {crianca.nome}!</h1>
             <ChipMoedas valor={crianca.moedas} />
@@ -50,12 +51,13 @@ export function AppCrianca({ aparelho, mudou }: { aparelho: Aparelho; mudou: () 
               <span className="selo"><Icone nome="estrela" tamanho={14} /> Nível {pet.nivel}</span>
               <button className="palco-nome" onClick={() => ir('pet')}>{pet.nome} <Icone nome="seta" tamanho={16} /></button>
             </div>
-            <PetVivo especie={pet.especie} nivel={pet.nivel} humor={c.humor} fala={c.fala} acao={acao} tamanho={170} />
+            <PetVivo especie={pet.especie} nivel={pet.nivel} humor={c.humor} fala={c.fala} acao={acao} tamanho={200} />
             <Barra pct={pet.pct} />
           </div>
           {prox ? <Agora key={prox.id} t={prox} mudou={eu.recarregar} comemorar={comemorar} />
             : hoje.length ? <div className="cartao tudo-feito"><span>🎉</span><strong>Tudo feito hoje!</strong></div> : null}
           <ProgressoDia hoje={hoje} />
+          </div>
           {resto.length > 0 && <h2 className="secao">Outras missões</h2>}
           <ListaMissoes tarefas={resto} mudou={eu.recarregar} comemorar={comemorar} vazio="" />
         </div>
@@ -268,6 +270,7 @@ function TelaPet({ pet, hoje, mudou }: { pet: PetInfo; hoje: TarefaDoDia[]; mudo
   const c = clima(pet, hoje, 'pet');
   return (
     <div className="pagina">
+      <div className="pet-topo">
       <div className="palco palco-grande" style={{ ['--tom' as any]: especie(pet.especie).barriga }}>
         <div className="palco-topo">
           <span className="selo"><Icone nome="estrela" tamanho={14} /> Nível {pet.nivel}</span>
@@ -296,6 +299,7 @@ function TelaPet({ pet, hoje, mudou }: { pet: PetInfo; hoje: TarefaDoDia[]; mudo
           <strong>Banho</strong>
           <small>{pet.banho ? 'Tá limpinho ✓' : <>+{MOEDAS_CUIDADO} <Moeda tamanho={16} /></>}</small>
         </button>
+      </div>
       </div>
       <h2 className="secao">Evolução</h2>
       <div className="evolucao">
@@ -352,8 +356,9 @@ function Premios({ mudou }: { mudou: () => void }) {
   const moedas = d.dados?.moedas ?? 0;
   return (
     <div className="pagina">
-      <Topo titulo="Prêmios" direita={<ChipMoedas valor={moedas} />} />
+      <Topo titulo="Prêmios" />
       {d.erro && <p className="erro">{d.erro}</p>}
+      {d.dados && <Cofrinho moedas={moedas} premios={d.dados.recompensas} />}
       {d.dados && !d.dados.recompensas.length && <div className="vazio"><p>Ainda não há prêmios. Peça para o responsável cadastrar!</p></div>}
       <div className="lista">
         {d.dados?.recompensas.map((r) => {
@@ -460,19 +465,34 @@ function Mais({ nome, doCelular, mudou, progresso }: { nome: string; doCelular: 
   return (
     <div className="pagina">
       <Topo titulo="Mais" />
-      <div className="lista">
-        <button className="cartao opcao" onClick={progresso}><Icone nome="grafico" /><span><strong>Meu progresso</strong><small>Dias seguidos, pontos e conquistas</small></span><Icone nome="seta" /></button>
-        {doCelular
-          ? <p className="aviso-celular"><Icone nome="celular" /> Este é o celular de {nome}</p>
-          : <button className="cartao opcao" onClick={async () => { await api('/conta/perfil/sair', { method: 'POST' }); mudou(); }}>
-              <Icone nome="pessoas" /><span><strong>Trocar de perfil</strong><small>Sair do perfil de {nome}</small></span><Icone nome="seta" />
-            </button>}
-        <label className="cartao opcao">
-          <Icone nome="som" /><span><strong>Sons</strong><small>{som ? 'Ligados' : 'Desligados'}</small></span>
-          <span className="interruptor"><input type="checkbox" checked={som} onChange={(e) => { ligarSom(e.target.checked); setSom(e.target.checked); if (e.target.checked) tocar('pop'); }} aria-label="Sons" /><span /></span>
-        </label>
-        <button className="cartao opcao" onClick={() => setPin(true)}><Icone nome="cadeado" /><span><strong>Área do responsável</strong><small>Precisa do PIN</small></span><Icone nome="seta" /></button>
+      {doCelular && <p className="aviso-celular"><Icone nome="celular" /> Este é o celular de {nome}</p>}
+      <div className="mais-grade">
+        <button className="cartao bloco bloco-roxo" onClick={progresso}><Icone nome="grafico" tamanho={40} /><strong>Meu progresso</strong></button>
+        <button className="cartao bloco" aria-pressed={som} onClick={() => { ligarSom(!som); setSom(!som); if (!som) tocar('pop'); }}>
+          <Icone nome="som" tamanho={40} /><strong>Sons</strong><small>{som ? 'Ligados' : 'Desligados'}</small>
+        </button>
+        {!doCelular && (
+          <button className="cartao bloco" onClick={async () => { await api('/conta/perfil/sair', { method: 'POST' }); mudou(); }}>
+            <Icone nome="pessoas" tamanho={40} /><strong>Trocar de perfil</strong>
+          </button>
+        )}
+        <button className="cartao bloco" onClick={() => setPin(true)}><Icone nome="cadeado" tamanho={40} /><strong>Responsável</strong><small>Precisa do PIN</small></button>
       </div>
+      <div className="rodape"><Logo /><small>Pequenos tratos, grandes conquistas.</small></div>
+    </div>
+  );
+}
+
+/** Saldo grande e quanto falta para o prêmio mais barato que ainda não dá para pedir. */
+function Cofrinho({ moedas, premios }: { moedas: number; premios: { titulo: string; icone: string; custo: number }[] }) {
+  const proximo = premios.filter((p) => p.custo > moedas).sort((a, b) => a.custo - b.custo)[0];
+  return (
+    <div className="cartao cofrinho" aria-label={`${moedas} moedinhas`}>
+      <span className="cofrinho-valor"><Moeda tamanho={52} /> {moedas}</span>
+      <small>moedinhas</small>
+      {proximo
+        ? <><Barra pct={(moedas / proximo.custo) * 100} cor="var(--sol)" /><small>Faltam {proximo.custo - moedas} para {proximo.icone} {proximo.titulo}</small></>
+        : premios.length ? <small>Dá para pedir qualquer prêmio!</small> : null}
     </div>
   );
 }

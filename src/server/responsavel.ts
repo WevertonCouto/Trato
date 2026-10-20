@@ -112,9 +112,11 @@ responsavelRoutes.post('/tarefas', async (c) => {
   return c.json({ id });
 });
 
-/** Plano grátis: no máximo N missões ativas por criança (as que já existem nunca são desligadas sozinhas). */
-const cheioDeMissoes = (c: Context<Env>, crianca: string) =>
-  get<{ n: number }>('SELECT COUNT(*) n FROM tarefas WHERE crianca_id = ? AND ativa = 1 AND excluida = 0', crianca)!.n >= limitesDa(c.get('familia')).missoes;
+/** Plano grátis com limite de missões (hoje desligado: null): no máximo N missões ativas por criança (as que já existem nunca são desligadas sozinhas). */
+function cheioDeMissoes(c: Context<Env>, crianca: string) {
+  const limite = limitesDa(c.get('familia')).missoes;
+  return limite !== null && get<{ n: number }>('SELECT COUNT(*) n FROM tarefas WHERE crianca_id = ? AND ativa = 1 AND excluida = 0', crianca)!.n >= limite;
+}
 
 const minhaTarefa = (c: Context<Env>) => get('SELECT * FROM tarefas WHERE id = ? AND familia_id = ? AND excluida = 0', c.req.param('id'), c.get('familia'));
 
