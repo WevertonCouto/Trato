@@ -3,10 +3,10 @@ import { api } from '../api.ts';
 import { Icone, Logo } from '../ui.tsx';
 import { Pet } from '../pet.tsx';
 
-type Passo = 'abertura' | 'boas-vindas' | 'entrar' | 'cadastro';
+type Passo = 'abertura' | 'boas-vindas' | 'entrar' | 'cadastro' | 'codigo';
 
 export function Entrada({ pronto }: { pronto: () => void }) {
-  const [passo, setPasso] = useState<Passo>(() => (localStorage.getItem('trato.viu') ? 'boas-vindas' : 'abertura'));
+  const [passo, setPasso] = useState<Passo>(() => { try { return localStorage.getItem('trato.viu') ? 'boas-vindas' : 'abertura'; } catch { return 'abertura'; } });
   const ir = (p: Passo) => { try { localStorage.setItem('trato.viu', '1'); } catch { /* sem armazenamento: mostra a abertura de novo */ } setPasso(p); };
 
   if (passo === 'abertura') {
@@ -39,11 +39,13 @@ export function Entrada({ pronto }: { pronto: () => void }) {
         <div className="botoes">
           <button className="btn btn-grande" onClick={() => setPasso('entrar')}>Já tenho uma conta</button>
           <button className="btn btn-claro btn-grande" onClick={() => setPasso('cadastro')}>Criar minha conta</button>
+          <button className="btn-link" onClick={() => setPasso('codigo')}><Icone nome="celular" tamanho={18} /> Entrar com código (celular da criança)</button>
         </div>
       </div>
     );
   }
 
+  if (passo === 'codigo') return <EntrarComCodigo voltar={() => setPasso('boas-vindas')} pronto={pronto} />;
   return passo === 'entrar'
     ? <Entrar voltar={() => setPasso('boas-vindas')} cadastro={() => setPasso('cadastro')} pronto={pronto} />
     : <Cadastro voltar={() => setPasso('boas-vindas')} entrar={() => setPasso('entrar')} pronto={pronto} />;
@@ -111,6 +113,31 @@ function Cadastro({ voltar, entrar, pronto }: { voltar: () => void; entrar: () =
       {erro && <p className="erro" role="alert">{erro}</p>}
       <button className="btn btn-grande" disabled={ocupado}>{ocupado ? 'Criando…' : 'Criar conta'}</button>
       <button type="button" className="btn-link" onClick={entrar}>Já tenho conta</button>
+    </form>
+  );
+}
+
+/** Celular da criança: o responsável gera o código na área dele; aqui ele vira a sessão presa no perfil. */
+function EntrarComCodigo({ voltar, pronto }: { voltar: () => void; pronto: () => void }) {
+  const [codigo, setCodigo] = useState('');
+  const [erro, setErro] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const enviar = async (e?: FormEvent) => {
+    e?.preventDefault();
+    if (codigo.length !== 6) return;
+    setOcupado(true);
+    try { await api('/conta/codigo', { body: { codigo } }); pronto(); } catch (err: any) { setErro(err.message); } finally { setOcupado(false); }
+  };
+  return (
+    <form className="pagina formulario codigo-tela" onSubmit={enviar}>
+      <button type="button" className="icone-btn" onClick={voltar} aria-label="Voltar"><Icone nome="voltar" /></button>
+      <Logo />
+      <h1>Entrar com código</h1>
+      <p className="suave">No celular do responsável: Área do responsável → Celulares → Conectar o celular da criança.</p>
+      <input className="codigo-campo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" value={codigo} aria-label="Código de 6 números"
+        onChange={(e) => { setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6)); setErro(''); }} autoFocus />
+      {erro && <p className="erro" role="alert">{erro}</p>}
+      <button className="btn btn-grande" disabled={ocupado || codigo.length !== 6}>{ocupado ? 'Conectando…' : 'Conectar'}</button>
     </form>
   );
 }

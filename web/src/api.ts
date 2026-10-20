@@ -20,7 +20,11 @@ export async function api<T = any>(caminho: string, opts: { method?: string; bod
   return dados as T;
 }
 
-export type Conta = { logado: false } | { logado: true; familia: { nome: string; email: string }; adulto: boolean; perfil: string | null };
+export type Aparelho = 'compartilhado' | 'responsavel' | 'crianca';
+export type Conta = { logado: false } | {
+  logado: true; familia: { nome: string; email: string; uso: 'um' | 'cada' | null };
+  adulto: boolean; perfil: string | null; aparelho: Aparelho;
+};
 export type Perfil = { id: string; nome: string; cor: string; especie: string; pet_nome: string; tem_pin: number | boolean };
 export type Tarefa = {
   id: string; titulo: string; icone: string; pontos: number; modo: 'direto' | 'aprovacao' | 'foto';

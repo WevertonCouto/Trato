@@ -2,9 +2,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { Hono, type Context } from 'hono';
-import { deleteCookie } from 'hono/cookie';
 import { FOTOS_DIR, all, confere, db, dia, get, hash, now, run, uid, type Row } from './db.ts';
-import { exigeAdulto, type Env } from './auth.ts';
+import { exigeAdulto, limparSessao, type Env } from './auth.ts';
 import { aprovarEntrega, doDia, publica, sequencia } from './rotina.ts';
 import { CORES_PERFIL, ESPECIES, MODOS } from '../shared/regras.ts';
 
@@ -224,6 +223,7 @@ responsavelRoutes.patch('/conta', async (c) => {
   const f = get('SELECT * FROM familias WHERE id = ?', c.get('familia'))!;
   const b = await corpo(c);
   if (b.nome !== undefined && texto(b.nome)) run('UPDATE familias SET nome = ? WHERE id = ?', texto(b.nome, 60), f.id);
+  if (b.uso === 'um' || b.uso === 'cada') run('UPDATE familias SET uso = ? WHERE id = ?', b.uso, f.id);
   if (b.pin !== undefined) {
     if (!/^\d{4}$/.test(String(b.pin))) return c.json({ erro: 'O PIN precisa ter 4 números.' }, 400);
     run('UPDATE familias SET pin = ? WHERE id = ?', hash(String(b.pin)), f.id);
@@ -247,6 +247,6 @@ responsavelRoutes.delete('/conta', async (c) => {
   if (!confere(String(b.senha ?? ''), f.senha)) return c.json({ erro: 'A senha não confere.' }, 401);
   apagarFotos(all('SELECT e.foto FROM entregas e JOIN criancas k ON k.id = e.crianca_id WHERE k.familia_id = ? AND e.foto IS NOT NULL', f.id));
   run('DELETE FROM familias WHERE id = ?', f.id);
-  for (const t of ['conta', 'adulto', 'perfil']) deleteCookie(c, `trato_${t}`, { path: '/' });
+  limparSessao(c);
   return c.json({ ok: true });
 });

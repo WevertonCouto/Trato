@@ -1,12 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, type Conta, type Tarefa } from '../api.ts';
-import { Icone, Logo, Modal, Moeda, Topo, avisar, useCarregar } from '../ui.tsx';
+import { Icone, Logo, Modal, Moeda, Topo, avisar, useAoVoltar, useCarregar } from '../ui.tsx';
 import { Pet } from '../pet.tsx';
 import { CORES_PERFIL, DIAS_CURTOS, ESPECIES, MODOS, descreverRecorrencia, type Modo } from '../../../src/shared/regras.ts';
 import { ICONES_RECOMPENSA, ICONES_TAREFA, MODELOS_RECOMPENSA, MODELOS_TAREFA } from '../modelos.ts';
 
 type Crianca = { id: string; nome: string; cor: string; especie: string; pet_nome: string; tem_pin: boolean; moedas: number; xp: number; sequencia: number; hoje: { total: number; feitas: number } };
-type Tela = 'painel' | 'missoes' | 'recompensas' | 'perfis' | 'aprovacoes' | 'conta';
+type Tela = 'painel' | 'missoes' | 'recompensas' | 'perfis' | 'aprovacoes' | 'conta' | 'celulares';
 type Aprovacoes = {
   entregas: { id: string; data: string; foto: string | null; pontos: number; titulo: string; icone: string; modo: Modo; crianca: string; cor: string }[];
   pedidos: { id: string; titulo: string; icone: string; custo: number; crianca: string; cor: string }[];
@@ -21,6 +21,9 @@ export function AreaResponsavel({ conta, mudou }: { conta: Extract<Conta, { loga
   const atual = lista.find((k) => k.id === sel) ?? lista[0];
   useEffect(() => { if (atual) try { localStorage.setItem('trato.sel', atual.id); } catch { /* só conveniência */ } }, [atual]);
 
+  // a criança pode estar em outro celular: fotos, pedidos e saldo chegam sem precisar recarregar
+  useAoVoltar(() => { criancas.recarregar(); aprov.recarregar(); }, 15_000);
+
   const ir = (t: Tela) => { setTela(t); window.scrollTo(0, 0); if (t === 'painel') { criancas.recarregar(); aprov.recarregar(); } };
   const pendentes = (aprov.dados?.entregas.length ?? 0) + (aprov.dados?.pedidos.length ?? 0);
   const sair = async () => { await api('/conta/adulto/sair', { method: 'POST' }); mudou(); };
@@ -34,6 +37,7 @@ export function AreaResponsavel({ conta, mudou }: { conta: Extract<Conta, { loga
   if (tela === 'perfis') return <Perfis criancas={lista} mudou={criancas.recarregar} entrou={mudou} voltar={() => ir('painel')} />;
   if (tela === 'aprovacoes') return <TelaAprovacoes dados={aprov.dados} mudou={aprov.recarregar} voltar={() => ir('painel')} />;
   if (tela === 'conta') return <TelaConta conta={conta} mudou={mudou} voltar={() => ir('painel')} />;
+  if (tela === 'celulares') return <Celulares conta={conta} criancas={lista} mudou={mudou} voltar={() => ir('painel')} />;
 
   return (
     <div className="pagina painel">
@@ -42,6 +46,7 @@ export function AreaResponsavel({ conta, mudou }: { conta: Extract<Conta, { loga
         <p className="suave">Área do responsável</p>
       </header>
       <div className="cartao conectado"><small>Conectado como</small><strong>{conta.familia.email}</strong></div>
+      {!conta.familia.uso && <PerguntaUso criancas={lista} mudou={mudou} />}
 
       <div className="seletor" role="tablist" aria-label="Criança">
         {lista.map((k) => (
@@ -71,6 +76,9 @@ export function AreaResponsavel({ conta, mudou }: { conta: Extract<Conta, { loga
         </button>
         <button className="cartao opcao" onClick={() => ir('perfis')}>
           <Icone nome="pessoas" /><span><strong>Perfis das crianças</strong><small>Adicionar, editar, PIN ou entrar no perfil</small></span><Icone nome="seta" />
+        </button>
+        <button className="cartao opcao" onClick={() => ir('celulares')}>
+          <Icone nome="celular" /><span><strong>Celulares</strong><small>{conta.aparelho === 'responsavel' ? 'Este é o seu celular' : 'Um para todos ou cada um com o seu'}</small></span><Icone nome="seta" />
         </button>
         <button className="cartao opcao" onClick={() => ir('conta')}>
           <Icone nome="cadeado" /><span><strong>Conta</strong><small>PIN, senha e dados</small></span><Icone nome="seta" />
@@ -442,6 +450,115 @@ function TelaConta({ conta, mudou, voltar }: { conta: Extract<Conta, { logado: t
           <button className="btn btn-perigo btn-grande">Excluir tudo</button>
         </form>
       </Modal>
+    </div>
+  );
+}
+
+// ---------- celulares (um para todos ou cada um com o seu) ----------
+
+/** Pergunta do primeiro uso: nada é obrigatório, "um celular para todos" continua como sempre. */
+function PerguntaUso({ criancas, mudou }: { criancas: Crianca[]; mudou: () => void }) {
+  const [conectar, setConectar] = useState<Crianca | null>(null);
+  const responder = async (uso: 'um' | 'cada') => {
+    try {
+      if (uso === 'cada') {
+        await api('/conta/aparelho', { body: { modo: 'responsavel' } });
+        if (criancas[0]) return setConectar(criancas[0]);
+      }
+      await api('/adulto/conta', { method: 'PATCH', body: { uso } });
+      mudou();
+    } catch (e: any) { avisar(e.message, 'erro'); }
+  };
+  return (
+    <div className="cartao pergunta-uso">
+      <h2>Como vocês vão usar o Trato?</h2>
+      <div className="duas">
+        <button className="opcao-uso" onClick={() => responder('um')}>
+          <span className="opcao-uso-icone"><Icone nome="celular" tamanho={34} /></span>
+          <strong>Um celular para todos</strong>
+          <small>Você e a criança no mesmo aparelho</small>
+        </button>
+        <button className="opcao-uso" onClick={() => responder('cada')}>
+          <span className="opcao-uso-icone"><Icone nome="celular" tamanho={30} /><Icone nome="celular" tamanho={30} /></span>
+          <strong>Cada um com o seu</strong>
+          <small>A criança no dela, você aprova do seu</small>
+        </button>
+      </div>
+      <Modal aberto={!!conectar} titulo={`Conectar o celular de ${conectar?.nome ?? ''}`}
+        fechar={async () => { setConectar(null); await api('/adulto/conta', { method: 'PATCH', body: { uso: 'cada' } }).catch(() => {}); mudou(); }}>
+        {conectar && <CodigoConexao crianca={conectar} />}
+      </Modal>
+    </div>
+  );
+}
+
+function Celulares({ conta, criancas, mudou, voltar }: { conta: Extract<Conta, { logado: true }>; criancas: Crianca[]; mudou: () => void; voltar: () => void }) {
+  const [conectar, setConectar] = useState<Crianca | null>(null);
+  const modo = async (body: object, pergunta?: string) => {
+    if (pergunta && !confirm(pergunta)) return;
+    try { await api('/conta/aparelho', { body }); mudou(); avisar('Pronto!'); } catch (e: any) { avisar(e.message, 'erro'); }
+  };
+  const atual = conta.aparelho;
+  return (
+    <div className="pagina">
+      <Topo titulo="Celulares" voltar={voltar} />
+      <h2 className="secao">Este celular é…</h2>
+      <div className="lista">
+        <button className={`cartao opcao modo-aparelho ${atual === 'compartilhado' ? 'escolhido' : ''}`} onClick={() => modo({ modo: 'compartilhado' })}>
+          <Icone nome="pessoas" /><span><strong>De todos</strong><small>Abre em "Quem vai usar?"</small></span>{atual === 'compartilhado' && <Icone nome="check" />}
+        </button>
+        <button className={`cartao opcao modo-aparelho ${atual === 'responsavel' ? 'escolhido' : ''}`} onClick={() => modo({ modo: 'responsavel' })}>
+          <Icone nome="cadeado" /><span><strong>Meu</strong><small>Abre direto na sua área, com o seu PIN</small></span>{atual === 'responsavel' && <Icone nome="check" />}
+        </button>
+        {criancas.map((k) => (
+          <button key={k.id} className="cartao opcao modo-aparelho" style={{ ['--cor' as any]: k.cor }}
+            onClick={() => modo({ modo: 'crianca', crianca_id: k.id }, `Este celular vai ficar no perfil de ${k.nome}. Para sair, só com o seu PIN. Continuar?`)}>
+            <Pet especie={k.especie} tamanho={30} /><span><strong>De {k.nome}</strong><small>Fica no perfil. Só sai com o seu PIN</small></span><Icone nome="seta" />
+          </button>
+        ))}
+      </div>
+      <h2 className="secao">Conectar outro celular</h2>
+      <p className="suave">A criança entra no celular dela sem saber a sua senha: é só um código que vale por 10 minutos.</p>
+      <div className="lista">
+        {criancas.map((k) => (
+          <button key={k.id} className="cartao opcao" onClick={() => setConectar(k)}>
+            <Icone nome="qr" /><span><strong>Conectar o celular de {k.nome}</strong><small>Gerar um código de 6 números</small></span><Icone nome="seta" />
+          </button>
+        ))}
+      </div>
+      <p className="suave centro-texto">Fotos, pedidos e moedinhas aparecem aqui sozinhos, mesmo vindos de outro celular.</p>
+      <Modal aberto={!!conectar} fechar={() => setConectar(null)} titulo={`Conectar o celular de ${conectar?.nome ?? ''}`}>
+        {conectar && <CodigoConexao crianca={conectar} />}
+      </Modal>
+    </div>
+  );
+}
+
+function CodigoConexao({ crianca }: { crianca: Crianca }) {
+  const [c, setC] = useState<{ codigo: string; expira_em: number } | null>(null);
+  const [erro, setErro] = useState('');
+  const [agora, setAgora] = useState(Date.now());
+  const gerar = async () => {
+    try { setC(await api('/conta/codigo/novo', { body: { crianca_id: crianca.id } })); setErro(''); } catch (e: any) { setErro(e.message); }
+  };
+  useEffect(() => { gerar(); }, [crianca.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const t = setInterval(() => setAgora(Date.now()), 1000); return () => clearInterval(t); }, []);
+  const resta = c ? Math.max(0, Math.round((c.expira_em - agora) / 1000)) : 0;
+  return (
+    <div className="codigo-conexao">
+      <ol className="passos">
+        <li>No celular de {crianca.nome}, abra o Trato.</li>
+        <li>Toque em <strong>Entrar com código</strong>.</li>
+        <li>Digite:</li>
+      </ol>
+      {erro && <p className="erro">{erro}</p>}
+      {c && (resta > 0
+        ? <>
+            <div className="codigo-grande" aria-label={`Código ${c.codigo.split('').join(' ')}`}>{c.codigo.slice(0, 3)}<span /> {c.codigo.slice(3)}</div>
+            <p className="suave centro-texto">Vale por mais {Math.floor(resta / 60)}:{String(resta % 60).padStart(2, '0')}</p>
+          </>
+        : <p className="suave centro-texto">O código venceu.</p>)}
+      <button className="btn btn-claro" onClick={gerar}>Gerar outro código</button>
     </div>
   );
 }

@@ -99,7 +99,20 @@ CREATE TABLE IF NOT EXISTS colecao (
   pet_nome TEXT NOT NULL,
   concluido_em INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS codigos (
+  codigo TEXT PRIMARY KEY,
+  familia_id TEXT NOT NULL REFERENCES familias(id) ON DELETE CASCADE,
+  crianca_id TEXT NOT NULL REFERENCES criancas(id) ON DELETE CASCADE,
+  expira_em INTEGER NOT NULL
+);
 `);
+
+// colunas novas em bancos já criados (o CREATE acima só cria o que não existe)
+const addColumn = (table: string, col: string, def: string) => {
+  if ((db.pragma(`table_info(${table})`) as { name: string }[]).some((c) => c.name === col)) return;
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
+};
+addColumn('familias', 'uso', 'TEXT'); // resposta de "Como vocês vão usar?": 'um' (celular para todos) ou 'cada' (cada um com o seu)
 
 export type Row = Record<string, any>;
 export const all = <T = Row>(sql: string, ...p: unknown[]) => db.prepare(sql).all(...p) as T[];

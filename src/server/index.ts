@@ -4,12 +4,13 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import './db.ts';
-import { authRoutes } from './auth.ts';
+import { authRoutes, sessao, type Env } from './auth.ts';
 import { criancaRoutes } from './crianca.ts';
 import { responsavelRoutes } from './responsavel.ts';
 
-const app = new Hono();
+const app = new Hono<Env>();
 
+app.use('/api/*', sessao);
 app.route('/api', authRoutes);
 app.route('/api/eu', criancaRoutes);
 app.route('/api/adulto', responsavelRoutes);

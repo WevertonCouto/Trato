@@ -400,3 +400,19 @@ legend { font-weight: 800; font-size: 0.92rem; padding: 0; margin-bottom: 8px; }
 .inicio .palco { padding-bottom: 14px; }
 .inicio .pet-vivo .balao { margin-bottom: -34px; z-index: 1; }
 .palco-grande .pet-vivo .balao { margin-bottom: -10px; z-index: 1; }
+
+/* ---------- celulares ---------- */
+.pergunta-uso { display: flex; flex-direction: column; gap: 12px; box-shadow: 0 0 0 3px var(--roxo) inset, var(--sombra); }
+.pergunta-uso h2 { font-size: 1.25rem; text-align: center; }
+.opcao-uso { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; background: var(--fundo); border: 2px solid var(--linha); border-radius: 18px; padding: 14px 8px; }
+.opcao-uso:active { border-color: var(--roxo); background: var(--roxo-claro); }
+.opcao-uso-icone { display: flex; color: var(--roxo); height: 36px; align-items: center; }
+.opcao-uso strong { font-size: 0.98rem; line-height: 1.2; }
+.opcao-uso small { color: var(--suave); line-height: 1.25; }
+.modo-aparelho.escolhido { box-shadow: 0 0 0 3px var(--roxo) inset, var(--sombra); }
+.codigo-conexao { display: flex; flex-direction: column; gap: 12px; }
+.passos { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+.codigo-grande { font-family: var(--titulo); font-weight: 800; font-size: 3rem; letter-spacing: 0.12em; text-align: center; color: var(--roxo); background: var(--cartao); border-radius: 20px; padding: 10px; box-shadow: var(--sombra); }
+.codigo-grande span { display: inline-block; width: 6px; }
+.codigo-campo { font-family: var(--titulo); font-size: 2.4rem; text-align: center; letter-spacing: 0.3em; font-weight: 800; padding: 14px; }
+.aviso-celular { display: flex; gap: 10px; align-items: center; justify-content: center; color: var(--suave); font-weight: 700; }

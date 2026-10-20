@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, type PetInfo, type Tarefa, type TarefaDoDia } from '../api.ts';
+import { api, type Aparelho, type PetInfo, type Tarefa, type TarefaDoDia } from '../api.ts';
 import { Barra, Festa, Icone, Modal, Moeda, PinPad, Topo, avisar, useAoVoltar, useCarregar } from '../ui.tsx';
 import { Pet } from '../pet.tsx';
 import { PetVivo, clima, proximaMissao, type Acao } from '../petvivo.tsx';
@@ -17,7 +17,7 @@ const ABAS: { id: Aba; nome: string; icone: string }[] = [
   { id: 'mais', nome: 'Mais', icone: 'menu' },
 ];
 
-export function AppCrianca({ mudou }: { mudou: () => void }) {
+export function AppCrianca({ aparelho, mudou }: { aparelho: Aparelho; mudou: () => void }) {
   const [aba, setAba] = useState<Aba>('inicio');
   const eu = useCarregar(() => api<Eu>('/eu'));
   const [festa, setFesta] = useState('');
@@ -75,7 +75,7 @@ export function AppCrianca({ mudou }: { mudou: () => void }) {
       tela = <Progresso voltar={() => ir('mais')} />;
       break;
     case 'mais':
-      tela = <Mais nome={crianca.nome} mudou={mudou} progresso={() => ir('progresso')} />;
+      tela = <Mais nome={crianca.nome} doCelular={aparelho === 'crianca'} mudou={mudou} progresso={() => ir('progresso')} />;
       break;
   }
 
@@ -444,7 +444,7 @@ function Progresso({ voltar }: { voltar: () => void }) {
   );
 }
 
-function Mais({ nome, mudou, progresso }: { nome: string; mudou: () => void; progresso: () => void }) {
+function Mais({ nome, doCelular, mudou, progresso }: { nome: string; doCelular: boolean; mudou: () => void; progresso: () => void }) {
   const [pin, setPin] = useState(false);
   const [erro, setErro] = useState<string>();
   const [som, setSom] = useState(somLigado);
@@ -462,9 +462,11 @@ function Mais({ nome, mudou, progresso }: { nome: string; mudou: () => void; pro
       <Topo titulo="Mais" />
       <div className="lista">
         <button className="cartao opcao" onClick={progresso}><Icone nome="grafico" /><span><strong>Meu progresso</strong><small>Dias seguidos, pontos e conquistas</small></span><Icone nome="seta" /></button>
-        <button className="cartao opcao" onClick={async () => { await api('/conta/perfil/sair', { method: 'POST' }); mudou(); }}>
-          <Icone nome="pessoas" /><span><strong>Trocar de perfil</strong><small>Sair do perfil de {nome}</small></span><Icone nome="seta" />
-        </button>
+        {doCelular
+          ? <p className="aviso-celular"><Icone nome="celular" /> Este é o celular de {nome}</p>
+          : <button className="cartao opcao" onClick={async () => { await api('/conta/perfil/sair', { method: 'POST' }); mudou(); }}>
+              <Icone nome="pessoas" /><span><strong>Trocar de perfil</strong><small>Sair do perfil de {nome}</small></span><Icone nome="seta" />
+            </button>}
         <label className="cartao opcao">
           <Icone nome="som" /><span><strong>Sons</strong><small>{som ? 'Ligados' : 'Desligados'}</small></span>
           <span className="interruptor"><input type="checkbox" checked={som} onChange={(e) => { ligarSom(e.target.checked); setSom(e.target.checked); if (e.target.checked) tocar('pop'); }} aria-label="Sons" /><span /></span>
