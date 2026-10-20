@@ -3,11 +3,14 @@ import { api, type Aparelho, type PetInfo, type Tarefa, type TarefaDoDia } from 
 import { Barra, Festa, Icone, Logo, Modal, Moeda, PinPad, Topo, avisar, useAoVoltar, useCarregar } from '../ui.tsx';
 import { Pet } from '../pet.tsx';
 import { PetVivo, clima, proximaMissao, type Acao } from '../petvivo.tsx';
-import { ligarSom, somLigado, tocar } from '../som.ts';
+import { ligarSom, somLigado, tocar } from '../sons.ts';
 import { DIAS_CURTOS, ESPECIES, ESTAGIOS, MOEDAS_CUIDADO, NIVEL_MAX, SITUACOES, descreverRecorrencia, especie } from '../../../src/shared/regras.ts';
 
 type Aba = 'inicio' | 'missoes' | 'pet' | 'premios' | 'mais' | 'progresso';
-type Eu = { crianca: { id: string; nome: string; cor: string; moedas: number; xp: number }; pet: PetInfo; hoje: TarefaDoDia[] };
+type Eu = {
+  crianca: { id: string; nome: string; cor: string; moedas: number; xp: number }; pet: PetInfo; hoje: TarefaDoDia[];
+  ultimoPremio: { id: string; titulo: string; icone: string } | null;
+};
 
 const ABAS: { id: Aba; nome: string; icone: string }[] = [
   { id: 'inicio', nome: 'Início', icone: 'casa' },
@@ -28,11 +31,12 @@ export function AppCrianca({ aparelho, mudou }: { aparelho: Aparelho; mudou: () 
   useEffect(() => { window.scrollTo(0, 0); }, [aba]);
   // com dois aparelhos, o responsável aprova de longe: atualiza ao voltar para o app e de tempos em tempos
   useAoVoltar(eu.recarregar, 30_000);
+  useNovidades(eu.dados, (txt) => { setFesta(txt); setAcao({ tipo: 'festa', id: Date.now() }); });
 
   if (!eu.dados) return <div className="centro">{eu.erro ? <p className="erro">{eu.erro}</p> : <div className="carregando" />}</div>;
   const { crianca, pet, hoje } = eu.dados;
 
-  const comemorar = (txt: string) => { setFesta(txt); setAcao({ tipo: 'festa', id: Date.now() }); eu.recarregar(); };
+  const comemorar = (txt: string) => { tocar('missao'); setFesta(txt); setAcao({ tipo: 'festa', id: Date.now() }); eu.recarregar(); };
   let tela;
   switch (aba) {
     case 'inicio': {
@@ -132,8 +136,8 @@ function useConcluir(t: TarefaDoDia, mudou: () => void, comemorar: (t: string) =
       if (arquivo) { form = new FormData(); form.append('foto', arquivo); }
       const r = await api<{ aprovada: boolean; pontos: number }>(`/eu/tarefas/${t.id}/concluir`, form ? { form } : { method: 'POST' });
       if (r.aprovada) comemorar(`+${r.pontos} pontos!`);
-      else { tocar('enviado', 30); avisar('Enviado! Agora é esperar o OK.'); mudou(); }
-    } catch (e: any) { avisar(e.message, 'erro'); } finally { setOcupado(false); }
+      else { tocar('enviado'); avisar('Enviado! Agora é esperar o OK.'); mudou(); }
+    } catch (e: any) { tocar('erro'); avisar(e.message, 'erro'); } finally { setOcupado(false); }
   };
   const fazer = () => {
     if (!podeFazer || ocupado) return;
@@ -264,8 +268,9 @@ function TelaPet({ pet, hoje, mudou }: { pet: PetInfo; hoje: TarefaDoDia[]; mudo
       setAcao({ tipo: tipo === 'alimentar' ? 'comer' : 'banho', id: Date.now() });
       avisar(`+${MOEDAS_CUIDADO} moedinhas!`);
       // espera a animação antes de recarregar (o botão vira "já comeu")
+      setTimeout(() => tocar('moedas'), 950);
       setTimeout(mudou, 1700);
-    } catch (e: any) { avisar(e.message, 'erro'); }
+    } catch (e: any) { tocar('erro'); avisar(e.message, 'erro'); }
   };
   const c = clima(pet, hoje, 'pet');
   return (
@@ -325,7 +330,7 @@ function NovoPet({ aberto, fechar, pronto }: { aberto: boolean; fechar: () => vo
   const [esp, setEsp] = useState(ESPECIES[1].id);
   const [nome, setNome] = useState('');
   const enviar = async () => {
-    try { await api('/eu/pet/novo', { body: { especie: esp, nome } }); avisar('Bem-vindo, novo amigo!'); pronto(); } catch (e: any) { avisar(e.message, 'erro'); }
+    try { await api('/eu/pet/novo', { body: { especie: esp, nome } }); tocar('nivel'); avisar('Bem-vindo, novo amigo!'); pronto(); } catch (e: any) { tocar('erro'); avisar(e.message, 'erro'); }
   };
   return (
     <Modal aberto={aberto} fechar={fechar} titulo="Escolha o novo pet">
@@ -351,7 +356,7 @@ function Premios({ mudou }: { mudou: () => void }) {
   const d = useCarregar(() => api<{ moedas: number; recompensas: Premio[]; pedidos: Pedido[] }>('/eu/recompensas'));
   const [confirmar, setConfirmar] = useState<Premio | null>(null);
   const pedir = async (r: Premio) => {
-    try { await api(`/eu/recompensas/${r.id}/pedir`, { method: 'POST' }); avisar('Pedido enviado para o responsável!'); setConfirmar(null); d.recarregar(); mudou(); } catch (e: any) { avisar(e.message, 'erro'); }
+    try { await api(`/eu/recompensas/${r.id}/pedir`, { method: 'POST' }); tocar('pedido'); avisar('Pedido enviado para o responsável!'); setConfirmar(null); d.recarregar(); mudou(); } catch (e: any) { tocar('erro'); avisar(e.message, 'erro'); }
   };
   const moedas = d.dados?.moedas ?? 0;
   return (
@@ -468,7 +473,7 @@ function Mais({ nome, doCelular, mudou, progresso }: { nome: string; doCelular: 
       {doCelular && <p className="aviso-celular"><Icone nome="celular" /> Este é o celular de {nome}</p>}
       <div className="mais-grade">
         <button className="cartao bloco bloco-roxo" onClick={progresso}><Icone nome="grafico" tamanho={40} /><strong>Meu progresso</strong></button>
-        <button className="cartao bloco" aria-pressed={som} onClick={() => { ligarSom(!som); setSom(!som); if (!som) tocar('pop'); }}>
+        <button className="cartao bloco" aria-pressed={som} onClick={() => { ligarSom(!som); setSom(!som); if (!som) tocar('enviado'); }}>
           <Icone nome="som" tamanho={40} /><strong>Sons</strong><small>{som ? 'Ligados' : 'Desligados'}</small>
         </button>
         {!doCelular && (
@@ -495,4 +500,30 @@ function Cofrinho({ moedas, premios }: { moedas: number; premios: { titulo: stri
         : premios.length ? <small>Dá para pedir qualquer prêmio!</small> : null}
     </div>
   );
+}
+
+/**
+ * O que mudou desde a última atualização e merece festa: o pet subiu de nível, uma missão foi aprovada
+ * (o responsável pode estar em outro celular) ou chegou uma recompensa aprovada.
+ */
+function useNovidades(dados: Eu | null, festejar: (txt: string) => void) {
+  const antes = useRef<{ especie: string; nivel: number; situacoes: Map<string, string> } | null>(null);
+  useEffect(() => {
+    if (!dados) return;
+    const { pet, hoje, ultimoPremio, crianca } = dados;
+    const a = antes.current;
+    if (a) {
+      const aprovadas = hoje.filter((t) => t.situacao === 'concluida' && a.situacoes.get(t.id) === 'aguardando');
+      if (pet.especie === a.especie && pet.nivel > a.nivel) { tocar('nivel'); festejar(`Nível ${pet.nivel}!`); }
+      else if (aprovadas.length) { tocar('missao'); festejar(`+${aprovadas.reduce((n, t) => n + t.pontos, 0)} pontos!`); }
+    }
+    antes.current = { especie: pet.especie, nivel: pet.nivel, situacoes: new Map(hoje.map((t) => [t.id, t.situacao])) };
+    // recompensa: guarda a última vista no aparelho, para não festejar de novo ao reabrir o app
+    if (ultimoPremio) {
+      const chave = `trato.premio.${crianca.id}`;
+      let visto: string | null = null;
+      try { visto = localStorage.getItem(chave); localStorage.setItem(chave, ultimoPremio.id); } catch { /* sem armazenamento */ }
+      if (visto && visto !== ultimoPremio.id) { tocar('premio'); festejar(`Ganhou: ${ultimoPremio.icone} ${ultimoPremio.titulo}!`); }
+    }
+  }, [dados]); // eslint-disable-line react-hooks/exhaustive-deps
 }

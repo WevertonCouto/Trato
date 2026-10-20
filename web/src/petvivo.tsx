@@ -4,7 +4,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { Pet, type Humor } from './pet.tsx';
-import { tocar } from './som.ts';
+import { tocar } from './sons.ts';
 import type { PetInfo, TarefaDoDia } from './api.ts';
 
 export type Acao = { tipo: 'comer' | 'banho' | 'festa'; id: number } | null;
@@ -28,9 +28,10 @@ export function PetVivo({ especie, nivel, humor, fala, tamanho = 200, acao }: { 
 
   useEffect(() => {
     if (!acao) return;
-    if (acao.tipo === 'comer') { tocar('nhac', 40); reagir('comer', 1600, 'Nham nham! Que delícia!'); }
-    if (acao.tipo === 'banho') { tocar('bolha', 40); reagir('banho', 1800, 'Que cheirinho bom!'); }
-    if (acao.tipo === 'festa') { tocar('festa', 60); reagir('festa', 1800, 'Uhuuu! Missão feita!'); }
+    if (acao.tipo === 'comer') { tocar('crunch'); reagir('comer', 1600, 'Nham nham! Que delícia!'); }
+    if (acao.tipo === 'banho') { tocar('bolhas'); reagir('banho', 1800, 'Que cheirinho bom!'); }
+    // o som da festa toca em quem comemora (missão, nível, prêmio), que nem sempre está nesta tela
+    if (acao.tipo === 'festa') { reagir('festa', 1800, 'Uhuuu! Missão feita!'); }
   }, [acao?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -38,7 +39,7 @@ export function PetVivo({ especie, nivel, humor, fala, tamanho = 200, acao }: { 
   const tocou = () => {
     const opcoes: Reacao[] = ['pulo', 'riso', 'carinho'];
     const r = opcoes[Math.floor(Math.random() * opcoes.length)];
-    tocar(r === 'riso' ? 'risada' : 'pop', 20);
+    tocar(r === 'riso' ? 'risadinha' : 'boing');
     reagir(r, 1200, FALAS_TOQUE[Math.floor(Math.random() * FALAS_TOQUE.length)]);
   };
 

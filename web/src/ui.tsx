@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { tocar } from './sons.ts';
 
 // ---------- ícones (traço, 24×24) ----------
 
@@ -112,13 +113,14 @@ export function PinPad({ titulo, texto, concluir, erro, cancelar }: { titulo: st
   const [tremer, setTremer] = useState(false);
   const ref = useRef(erro);
   useEffect(() => {
-    if (erro && erro !== ref.current) { setTremer(true); setTimeout(() => setTremer(false), 400); }
+    if (erro && erro !== ref.current) { tocar('erro'); setTremer(true); setTimeout(() => setTremer(false), 400); }
     ref.current = erro;
   }, [erro]);
   // toques rápidos chegam antes de o React redesenhar: o PIN digitado fica numa ref, não no estado da renderização
   const atual = useRef('');
   const tecla = async (d: string) => {
     if (ocupado || (d !== '<' && atual.current.length >= 4)) return;
+    tocar('tecla');
     const novo = d === '<' ? atual.current.slice(0, -1) : atual.current + d;
     atual.current = novo;
     setPin(novo);

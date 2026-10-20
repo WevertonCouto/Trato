@@ -6,6 +6,7 @@ import { CORES_PERFIL, DIAS_CURTOS, ESPECIES, MODOS, descreverRecorrencia, type 
 import { ICONES_RECOMPENSA, ICONES_TAREFA, MODELOS_RECOMPENSA, MODELOS_TAREFA } from '../modelos.ts';
 import { comprar, comprasDisponiveis, pacotes, restaurar, type Pacote } from '../compras.ts';
 import { API_BASE, LINK_LOJA } from '../plataforma.ts';
+import { ligarSom, somLigado, tocar } from '../sons.ts';
 
 type Crianca = { id: string; nome: string; cor: string; especie: string; pet_nome: string; tem_pin: boolean; moedas: number; xp: number; sequencia: number; hoje: { total: number; feitas: number } };
 type Tela = 'painel' | 'missoes' | 'recompensas' | 'perfis' | 'aprovacoes' | 'conta' | 'celulares' | 'plano';
@@ -373,7 +374,7 @@ function FormRecompensa({ r, criancas, salvo }: { r: Partial<Recompensa>; crianc
 function TelaAprovacoes({ dados, mudou, voltar }: { dados: Aprovacoes | null; mudou: () => void; voltar: () => void }) {
   const [foto, setFoto] = useState<string | null>(null);
   const decidir = async (tipo: 'entregas' | 'pedidos', id: string, aprovar: boolean) => {
-    try { await api(`/adulto/aprovacoes/${tipo}/${id}`, { body: { aprovar } }); avisar(aprovar ? 'Aprovado!' : tipo === 'entregas' ? 'Pedimos para refazer.' : 'Pedido recusado. As moedinhas voltaram.'); mudou(); } catch (e: any) { avisar(e.message, 'erro'); }
+    try { await api(`/adulto/aprovacoes/${tipo}/${id}`, { body: { aprovar } }); if (aprovar) tocar('aprovar'); avisar(aprovar ? 'Aprovado!' : tipo === 'entregas' ? 'Pedimos para refazer.' : 'Pedido recusado. As moedinhas voltaram.'); mudou(); } catch (e: any) { avisar(e.message, 'erro'); }
   };
   const vazio = dados && !dados.entregas.length && !dados.pedidos.length;
   return (
@@ -432,6 +433,7 @@ function TelaConta({ conta, mudou, voltar }: { conta: Extract<Conta, { logado: t
     <div className="pagina">
       <Topo titulo="Conta" voltar={voltar} />
       <div className="cartao conectado"><small>{conta.familia.nome}</small><strong>{conta.familia.email}</strong></div>
+      <SonsDoAparelho />
       <form className="cartao formulario" onSubmit={async (e) => { e.preventDefault(); if (await salvar({ pin }, 'PIN trocado.')) setPin(''); }}>
         <h2 className="secao-cartao">Trocar o PIN do responsável</h2>
         <label>Novo PIN<input inputMode="numeric" pattern="\d{4}" maxLength={4} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} required /></label>
@@ -706,5 +708,17 @@ function TelaPlano({ voltar, conta }: { voltar: () => void; conta: () => void })
         <button className="btn-link" onClick={conta}>Excluir conta e dados</button>
       </div>
     </div>
+  );
+}
+
+/** Liga/desliga sons e vibração deste aparelho (guardado no próprio aparelho, ligado por padrão). */
+function SonsDoAparelho() {
+  const [ligado, setLigado] = useState(somLigado);
+  return (
+    <label className="cartao opcao">
+      <Icone nome="som" /><span><strong>Sons e vibração</strong><small>Neste aparelho: {ligado ? 'ligados' : 'desligados'}</small></span>
+      <span className="interruptor"><input type="checkbox" checked={ligado} aria-label="Sons e vibração neste aparelho"
+        onChange={(e) => { ligarSom(e.target.checked); setLigado(e.target.checked); if (e.target.checked) tocar('aprovar'); }} /><span /></span>
+    </label>
   );
 }

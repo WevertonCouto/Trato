@@ -487,3 +487,4 @@ label.opcao { flex-direction: row; font-weight: inherit; font-size: inherit; cur
 .bloco[aria-pressed='false'] { color: var(--suave); }
 .bloco-roxo { background: var(--roxo); color: #fff; box-shadow: 0 6px 0 var(--roxo-escuro); }
 .bloco-roxo strong { color: #fff; }
+.opcao > .interruptor { flex: none; }

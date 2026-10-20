@@ -19,6 +19,8 @@ criancaRoutes.get('/', (c) => {
     crianca: { id: k.id, nome: k.nome, cor: k.cor, moedas: k.moedas, xp: k.xp },
     pet: petDe(k),
     hoje: doDia(k.id, dia()),
+    // a tela comemora quando aparece uma recompensa aprovada nova (o responsável pode aprovar de outro celular)
+    ultimoPremio: get("SELECT id, titulo, icone FROM pedidos WHERE crianca_id = ? AND situacao = 'aprovado' ORDER BY decidido_em DESC LIMIT 1", k.id) ?? null,
   });
 });
 
