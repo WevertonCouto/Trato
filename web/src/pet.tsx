@@ -5,7 +5,8 @@ import { especie as acharEspecie, NIVEL_MAX } from '../../src/shared/regras.ts';
 const INK = '#2B2340';
 const ESCALA = [0.7, 0.79, 0.87, 0.94, 1];
 
-type Props = { especie: string; nivel?: number; humor?: 'feliz' | 'triste' | 'dormindo'; tamanho?: number; bloqueado?: boolean; className?: string };
+export type Humor = 'feliz' | 'rindo' | 'triste' | 'fome' | 'comendo' | 'dormindo';
+type Props = { especie: string; nivel?: number; humor?: Humor; tamanho?: number; bloqueado?: boolean; className?: string };
 
 export function Pet({ especie, nivel = 1, humor = 'feliz', tamanho = 160, bloqueado, className }: Props) {
   const e = acharEspecie(especie);
@@ -47,29 +48,82 @@ export function Pet({ especie, nivel = 1, humor = 'feliz', tamanho = 160, bloque
   );
 }
 
-function Rosto({ humor }: { humor: Props['humor'] }) {
-  if (humor === 'dormindo') {
-    return (
-      <g stroke={INK} strokeWidth="4" strokeLinecap="round" fill="none">
-        <path d="M74 110 Q81 116 88 110" />
-        <path d="M112 110 Q119 116 126 110" />
-        <path d="M95 130 Q100 133 105 130" />
-      </g>
-    );
+const Bochechas = ({ forte }: { forte?: boolean }) => (
+  <>
+    <ellipse cx="64" cy="126" rx="9" ry="5" fill="#FF8FA3" opacity={forte ? 0.85 : 0.55} />
+    <ellipse cx="136" cy="126" rx="9" ry="5" fill="#FF8FA3" opacity={forte ? 0.85 : 0.55} />
+  </>
+);
+/** Olhos fechados de alegria (^ ^). */
+const OlhosFelizes = () => (
+  <g stroke={INK} strokeWidth="4.5" strokeLinecap="round" fill="none">
+    <path d="M73 112 Q81 100 89 112" />
+    <path d="M111 112 Q119 100 127 112" />
+  </g>
+);
+const OlhosAbertos = ({ ry = 10.5, cima }: { ry?: number; cima?: boolean }) => (
+  <>
+    <ellipse cx="81" cy="108" rx="8.5" ry={ry} fill={INK} />
+    <ellipse cx="119" cy="108" rx="8.5" ry={ry} fill={INK} />
+    <circle cx="78" cy={cima ? 102 : 104} r="3.2" fill="#fff" />
+    <circle cx="116" cy={cima ? 102 : 104} r="3.2" fill="#fff" />
+  </>
+);
+
+function Rosto({ humor }: { humor: Humor }) {
+  switch (humor) {
+    case 'dormindo':
+      return (
+        <g stroke={INK} strokeWidth="4" strokeLinecap="round" fill="none">
+          <path d="M74 110 Q81 116 88 110" />
+          <path d="M112 110 Q119 116 126 110" />
+          <path d="M95 130 Q100 133 105 130" />
+        </g>
+      );
+    case 'rindo':
+      return (
+        <g>
+          <OlhosFelizes />
+          <Bochechas forte />
+          <path d="M84 122 Q100 146 116 122 Z" fill={INK} stroke={INK} strokeWidth="3" strokeLinejoin="round" />
+          <path d="M92 132 Q100 140 108 132 Q100 128 92 132 Z" fill="#FF6F8E" />
+        </g>
+      );
+    case 'comendo':
+      return (
+        <g>
+          <OlhosFelizes />
+          <Bochechas forte />
+          <ellipse className="mastigar" cx="100" cy="128" rx="9" ry="6" fill={INK} />
+        </g>
+      );
+    case 'fome':
+      return (
+        <g>
+          <OlhosAbertos cima />
+          <Bochechas />
+          <ellipse cx="100" cy="129" rx="6" ry="7" fill={INK} />
+          <path d="M108 132 Q111 140 108 144 Q105 140 108 132 Z" fill="#8FD3FF" />
+        </g>
+      );
+    case 'triste':
+      return (
+        <g>
+          <OlhosAbertos ry={8} />
+          <Bochechas />
+          <path d="M91 132 Q100 125 109 132" stroke={INK} strokeWidth="4" strokeLinecap="round" fill="none" />
+          <path d="M70 118 Q72 124 70 128 Q67 124 70 118 Z" fill="#8FD3FF" />
+        </g>
+      );
+    default:
+      return (
+        <g>
+          <OlhosAbertos />
+          <Bochechas />
+          <path d="M88 124 Q100 138 112 124 Q100 130 88 124 Z" fill={INK} stroke={INK} strokeWidth="3" strokeLinejoin="round" />
+        </g>
+      );
   }
-  return (
-    <g>
-      <ellipse cx="81" cy="108" rx="8.5" ry={humor === 'triste' ? 8 : 10.5} fill={INK} />
-      <ellipse cx="119" cy="108" rx="8.5" ry={humor === 'triste' ? 8 : 10.5} fill={INK} />
-      <circle cx="78" cy="104" r="3.2" fill="#fff" />
-      <circle cx="116" cy="104" r="3.2" fill="#fff" />
-      <ellipse cx="64" cy="126" rx="9" ry="5" fill="#FF8FA3" opacity="0.55" />
-      <ellipse cx="136" cy="126" rx="9" ry="5" fill="#FF8FA3" opacity="0.55" />
-      {humor === 'triste'
-        ? <path d="M91 132 Q100 125 109 132" stroke={INK} strokeWidth="4" strokeLinecap="round" fill="none" />
-        : <path d="M88 124 Q100 138 112 124 Q100 130 88 124 Z" fill={INK} stroke={INK} strokeWidth="3" strokeLinejoin="round" />}
-    </g>
-  );
 }
 
 function Detalhe({ tipo, nivel, cor, sombra, barriga, atras }: { tipo: string; nivel: number; cor: string; sombra: string; barriga: string; atras?: boolean }) {

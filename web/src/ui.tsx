@@ -28,6 +28,10 @@ const P: Record<string, ReactNode> = {
   banho: <><path d="M12 4c3 4 5 6.5 5 9a5 5 0 0 1-10 0c0-2.5 2-5 5-9Z" /><path d="M10 14a2 2 0 0 0 2 2" /></>,
   troca: <><path d="M5 9h13l-3-3" /><path d="M19 15H6l3 3" /></>,
   x: <><path d="M6 6l12 12" /><path d="M18 6 6 18" /></>,
+  som: <><path d="M5 10v4h3l4 3.5v-11L8 10z" /><path d="M15.5 9a4 4 0 0 1 0 6" /><path d="M18 6.5a7.5 7.5 0 0 1 0 11" /></>,
+  celular: <><rect x="7" y="3" width="10" height="18" rx="2.5" /><path d="M11 17.5h2" /></>,
+  qr: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2" /></>,
+  coroa: <path d="M4 18h16l-1.5-10-4.5 4-2-6-2 6-4.5-4z" />,
 };
 
 export function Icone({ nome, tamanho = 22, className }: { nome: keyof typeof P | string; tamanho?: number; className?: string }) {
@@ -168,12 +172,18 @@ export function Avisos() {
 }
 
 /** Comemoração rápida quando a criança ganha pontos. */
-export function Festa({ texto, fim }: { texto: string; fim: () => void }) {
-  useEffect(() => { const t = setTimeout(fim, 1800); return () => clearTimeout(t); }, [fim]);
+export function Festa({ texto, fim, children }: { texto: string; fim: () => void; children?: ReactNode }) {
+  // o pai recria `fim` a cada render: guarda numa ref para o tempo não recomeçar
+  const fimRef = useRef(fim);
+  fimRef.current = fim;
+  useEffect(() => { const t = setTimeout(() => fimRef.current(), 1900); return () => clearTimeout(t); }, [texto]);
   return (
     <div className="festa" onClick={fim}>
       {Array.from({ length: 18 }, (_, i) => <i key={i} style={{ ['--i' as any]: i }} />)}
-      <div className="festa-texto">{texto}</div>
+      <div className="festa-meio">
+        {children}
+        <div className="festa-texto">{texto}</div>
+      </div>
     </div>
   );
 }
@@ -188,3 +198,15 @@ export const useCarregar = <T,>(fn: () => Promise<T>, deps: unknown[] = []) => {
   useEffect(() => { recarregar(); }, deps);
   return { dados, erro, recarregar };
 };
+
+/** Recarrega quando o app volta para a frente e, com ele aberto, a cada `intervalo` ms. */
+export function useAoVoltar(recarregar: () => void, intervalo: number) {
+  const ref = useRef(recarregar);
+  ref.current = recarregar;
+  useEffect(() => {
+    const visivel = () => document.visibilityState === 'visible' && ref.current();
+    document.addEventListener('visibilitychange', visivel);
+    const t = setInterval(() => document.visibilityState === 'visible' && ref.current(), intervalo);
+    return () => { document.removeEventListener('visibilitychange', visivel); clearInterval(t); };
+  }, [intervalo]);
+}

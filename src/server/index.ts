@@ -24,8 +24,8 @@ const dist = path.resolve('web/dist');
 if (fs.existsSync(dist)) {
   app.use('/sw.js', async (c, next) => { await next(); c.header('cache-control', 'no-cache'); });
   app.use('/*', serveStatic({ root: path.relative(process.cwd(), dist) }));
-  const index = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
-  app.get('*', (c) => c.html(index));
+  // lido a cada pedido: um build novo (com outros nomes de arquivo) vale sem reiniciar o servidor
+  app.get('*', (c) => c.html(fs.readFileSync(path.join(dist, 'index.html'), 'utf8')));
 }
 
 const port = Number(process.env.API_PORT || 4410);

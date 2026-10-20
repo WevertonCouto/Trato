@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, type PetInfo, type Tarefa, type TarefaDoDia } from '../api.ts';
-import { Barra, Festa, Icone, Modal, Moeda, PinPad, Topo, avisar, useCarregar } from '../ui.tsx';
+import { Barra, Festa, Icone, Modal, Moeda, PinPad, Topo, avisar, useAoVoltar, useCarregar } from '../ui.tsx';
 import { Pet } from '../pet.tsx';
+import { PetVivo, clima, proximaMissao, type Acao } from '../petvivo.tsx';
+import { ligarSom, somLigado, tocar } from '../som.ts';
 import { DIAS_CURTOS, ESPECIES, ESTAGIOS, MOEDAS_CUIDADO, NIVEL_MAX, SITUACOES, descreverRecorrencia, especie } from '../../../src/shared/regras.ts';
 
 type Aba = 'inicio' | 'missoes' | 'pet' | 'premios' | 'mais' | 'progresso';
@@ -19,51 +21,58 @@ export function AppCrianca({ mudou }: { mudou: () => void }) {
   const [aba, setAba] = useState<Aba>('inicio');
   const eu = useCarregar(() => api<Eu>('/eu'));
   const [festa, setFesta] = useState('');
+  const [acao, setAcao] = useState<Acao>(null);
 
-  const humor = (p: PetInfo) => (p.alimentado || p.banho ? 'feliz' : new Date().getHours() >= 21 ? 'dormindo' : 'feliz');
   const ir = (a: Aba) => setAba(a);
   // rola depois de a aba nova desenhar (antes, a página ainda tinha a altura da anterior)
   useEffect(() => { window.scrollTo(0, 0); }, [aba]);
+  // com dois aparelhos, o responsável aprova de longe: atualiza ao voltar para o app e de tempos em tempos
+  useAoVoltar(eu.recarregar, 30_000);
 
   if (!eu.dados) return <div className="centro">{eu.erro ? <p className="erro">{eu.erro}</p> : <div className="carregando" />}</div>;
-  const { crianca, pet } = eu.dados;
+  const { crianca, pet, hoje } = eu.dados;
 
-  const comemorar = (txt: string) => { setFesta(txt); eu.recarregar(); };
+  const comemorar = (txt: string) => { setFesta(txt); setAcao({ tipo: 'festa', id: Date.now() }); eu.recarregar(); };
   let tela;
   switch (aba) {
-    case 'inicio':
+    case 'inicio': {
+      const c = clima(pet, hoje);
+      const prox = proximaMissao(hoje);
+      const resto = hoje.filter((t) => t.id !== prox?.id).sort((a, b) => Number(FEITAS.has(a.situacao)) - Number(FEITAS.has(b.situacao)));
       tela = (
-        <div className="pagina">
+        <div className="pagina inicio">
           <header className="ola">
-            <span className="ola-pet" style={{ background: especie(pet.especie).barriga }}><Pet especie={pet.especie} nivel={pet.nivel} tamanho={46} /></span>
-            <div>
-              <h1>Oi, {crianca.nome}!</h1>
-              <p className="suave">Bora cuidar do {pet.nome}?</p>
-            </div>
+            <h1>Oi, {crianca.nome}!</h1>
             <ChipMoedas valor={crianca.moedas} />
           </header>
-          <CartaoPet pet={pet} humor={humor(pet)} onClick={() => ir('pet')} />
-          <button className="cartao cartao-roxo atalho" onClick={() => ir('progresso')}>
-            <span className="atalho-icone"><Icone nome="grafico" /></span>
-            <span><strong>Meu progresso</strong><small>Pontos, dias seguidos e conquistas</small></span>
-            <Icone nome="seta" />
-          </button>
-          <h2 className="secao">Missões de hoje</h2>
-          <ListaMissoes tarefas={eu.dados.hoje} mudou={eu.recarregar} comemorar={comemorar} vazio="Nenhuma missão para hoje. Aproveite o dia!" />
+          <div className="palco" style={{ ['--tom' as any]: especie(pet.especie).barriga }}>
+            <div className="palco-topo">
+              <span className="selo"><Icone nome="estrela" tamanho={14} /> Nível {pet.nivel}</span>
+              <button className="palco-nome" onClick={() => ir('pet')}>{pet.nome} <Icone nome="seta" tamanho={16} /></button>
+            </div>
+            <PetVivo especie={pet.especie} nivel={pet.nivel} humor={c.humor} fala={c.fala} acao={acao} tamanho={170} />
+            <Barra pct={pet.pct} />
+          </div>
+          {prox ? <Agora key={prox.id} t={prox} mudou={eu.recarregar} comemorar={comemorar} />
+            : hoje.length ? <div className="cartao tudo-feito"><span>🎉</span><strong>Tudo feito hoje!</strong></div> : null}
+          <ProgressoDia hoje={hoje} />
+          {resto.length > 0 && <h2 className="secao">Outras missões</h2>}
+          <ListaMissoes tarefas={resto} mudou={eu.recarregar} comemorar={comemorar} vazio="" />
         </div>
       );
       break;
+    }
     case 'missoes':
       tela = <Missoes mudou={eu.recarregar} comemorar={comemorar} />;
       break;
     case 'pet':
-      tela = <TelaPet pet={pet} humor={humor(pet)} mudou={eu.recarregar} comemorar={comemorar} />;
+      tela = <TelaPet pet={pet} hoje={hoje} mudou={eu.recarregar} />;
       break;
     case 'premios':
       tela = <Premios mudou={eu.recarregar} />;
       break;
     case 'progresso':
-      tela = <Progresso voltar={() => ir('inicio')} />;
+      tela = <Progresso voltar={() => ir('mais')} />;
       break;
     case 'mais':
       tela = <Mais nome={crianca.nome} mudou={mudou} progresso={() => ir('progresso')} />;
@@ -76,47 +85,44 @@ export function AppCrianca({ mudou }: { mudou: () => void }) {
       <nav className="menu">
         {ABAS.map((a) => (
           <button key={a.id} className={aba === a.id || (a.id === 'mais' && aba === 'progresso') ? 'ativo' : ''} onClick={() => ir(a.id)}>
-            <Icone nome={a.icone} /><span>{a.nome}</span>
+            <Icone nome={a.icone} tamanho={26} /><span>{a.nome}</span>
           </button>
         ))}
       </nav>
-      {festa && <Festa texto={festa} fim={() => setFesta('')} />}
+      {festa && <Festa texto={festa} fim={() => setFesta('')}>{<Pet especie={pet.especie} nivel={pet.nivel} humor="rindo" tamanho={140} className="pulando" />}</Festa>}
     </>
   );
 }
 
 const falta = (p: PetInfo) => (p.nivel === NIVEL_MAX ? `Faltam ${p.faltam} pts para completar o ${p.nome}` : `Faltam ${p.faltam} pts para o próximo nível`);
 
-const ChipMoedas =({ valor }: { valor: number }) => <span className="chip-moedas" aria-label={`${valor} moedinhas`}><Moeda /> {valor}</span>;
+const ChipMoedas = ({ valor }: { valor: number }) => <span className="chip-moedas" aria-label={`${valor} moedinhas`}><Moeda tamanho={24} /> {valor}</span>;
 
-function CartaoPet({ pet, humor, onClick }: { pet: PetInfo; humor: 'feliz' | 'triste' | 'dormindo'; onClick?: () => void }) {
+/** Uma bolinha por missão do dia: a criança vê de longe quanto falta. */
+function ProgressoDia({ hoje }: { hoje: TarefaDoDia[] }) {
+  if (!hoje.length) return null;
+  const feitas = hoje.filter((t) => FEITAS.has(t.situacao)).length;
   return (
-    <button className="cartao cartao-pet" onClick={onClick} style={{ ['--tom' as any]: especie(pet.especie).barriga }}>
-      <div className="cartao-pet-topo">
-        <span className="selo">Nível {pet.nivel}</span>
-        <span className="selo selo-sol"><Icone nome="estrela" tamanho={14} /> {pet.xp} pts</span>
+    <div className="cartao dia" aria-label={`${feitas} de ${hoje.length} missões feitas`}>
+      <div className="dia-topo"><strong>Hoje</strong><span className="dia-conta">{feitas}<small>/{hoje.length}</small></span></div>
+      <div className="dia-bolinhas">
+        {hoje.map((t) => (
+          <span key={t.id} className={`bolinha-missao bm-${t.situacao}`} title={t.titulo}>
+            {t.icone}{t.situacao === 'concluida' && <i>✓</i>}
+          </span>
+        ))}
       </div>
-      <Pet especie={pet.especie} nivel={pet.nivel} humor={humor} tamanho={170} className="flutuar" />
-      <div className="linha-barra"><Barra pct={pet.pct} /><strong>{pet.pct}%</strong></div>
-      <p className="suave">{pet.completo ? `O ${pet.nome} cresceu todo!` : falta(pet)}</p>
-    </button>
+    </div>
   );
 }
 
 // ---------- missões ----------
 
-function ListaMissoes({ tarefas, mudou, comemorar, vazio, soVer }: { tarefas: TarefaDoDia[]; mudou: () => void; comemorar: (t: string) => void; vazio: string; soVer?: boolean }) {
-  if (!tarefas.length) return <div className="vazio"><p>{vazio}</p></div>;
-  return <div className="lista">{tarefas.map((t) => <ItemMissao key={t.id + t.data} t={t} mudou={mudou} comemorar={comemorar} soVer={soVer} />)}</div>;
-}
-
-const FEITAS = new Set(['concluida', 'aguardando']);
-
-function ItemMissao({ t, mudou, comemorar, soVer }: { t: TarefaDoDia; mudou: () => void; comemorar: (t: string) => void; soVer?: boolean }) {
+/** Concluir uma missão: direto, pedindo OK ou com foto (abre a câmera). */
+function useConcluir(t: TarefaDoDia, mudou: () => void, comemorar: (t: string) => void) {
   const foto = useRef<HTMLInputElement>(null);
   const [ocupado, setOcupado] = useState(false);
-  const podeFazer = !soVer && ['disponivel', 'agora', 'atrasada', 'refazer'].includes(t.situacao);
-
+  const podeFazer = ['disponivel', 'agora', 'atrasada', 'refazer'].includes(t.situacao);
   const enviar = async (arquivo?: File) => {
     setOcupado(true);
     try {
@@ -124,31 +130,65 @@ function ItemMissao({ t, mudou, comemorar, soVer }: { t: TarefaDoDia; mudou: () 
       if (arquivo) { form = new FormData(); form.append('foto', arquivo); }
       const r = await api<{ aprovada: boolean; pontos: number }>(`/eu/tarefas/${t.id}/concluir`, form ? { form } : { method: 'POST' });
       if (r.aprovada) comemorar(`+${r.pontos} pontos!`);
-      else { avisar('Enviado! Agora é só esperar o responsável aprovar.'); mudou(); }
+      else { tocar('enviado', 30); avisar('Enviado! Agora é esperar o OK.'); mudou(); }
     } catch (e: any) { avisar(e.message, 'erro'); } finally { setOcupado(false); }
   };
-  const tocar = () => {
+  const fazer = () => {
     if (!podeFazer || ocupado) return;
     if (t.modo === 'foto') foto.current?.click();
     else enviar();
   };
+  const input = <input ref={foto} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) enviar(f); }} />;
+  return { fazer, ocupado, podeFazer, input };
+}
 
-  const meta = [t.hora, `+${t.pontos} pts`, SITUACOES[t.situacao]].filter(Boolean).join(' · ');
+/** A missão da vez, grande, com um botão só. */
+function Agora({ t, mudou, comemorar }: { t: TarefaDoDia; mudou: () => void; comemorar: (t: string) => void }) {
+  const { fazer, ocupado, input } = useConcluir(t, mudou, comemorar);
+  const rotulo = t.situacao === 'atrasada' ? 'Atrasada!' : t.situacao === 'refazer' ? 'Refazer' : 'Agora';
+  return (
+    <div className={`cartao agora agora-${t.situacao}`}>
+      <span className="agora-rotulo">{rotulo}</span>
+      <div className="agora-meio">
+        <span className="agora-icone">{t.icone}</span>
+        <div>
+          <strong className="agora-titulo">{t.titulo}</strong>
+          <span className="agora-pontos">+{t.pontos} <Icone nome="estrela" tamanho={16} />{t.hora ? ` · ${t.hora}` : ''}</span>
+        </div>
+      </div>
+      <button className="btn btn-gigante" onClick={fazer} disabled={ocupado}>
+        {t.modo === 'foto' ? <><Icone nome="camera" tamanho={26} /> Tirar foto</> : <><Icone nome="check" tamanho={26} /> {t.modo === 'aprovacao' ? 'Fiz! Pedir OK' : 'Fiz!'}</>}
+      </button>
+      {input}
+    </div>
+  );
+}
+
+function ListaMissoes({ tarefas, mudou, comemorar, vazio, soVer }: { tarefas: TarefaDoDia[]; mudou: () => void; comemorar: (t: string) => void; vazio: string; soVer?: boolean }) {
+  if (!tarefas.length) return vazio ? <div className="vazio"><p>{vazio}</p></div> : null;
+  return <div className="lista">{tarefas.map((t) => <ItemMissao key={t.id + t.data} t={t} mudou={mudou} comemorar={comemorar} soVer={soVer} />)}</div>;
+}
+
+const FEITAS = new Set(['concluida', 'aguardando']);
+
+function ItemMissao({ t, mudou, comemorar, soVer }: { t: TarefaDoDia; mudou: () => void; comemorar: (t: string) => void; soVer?: boolean }) {
+  const { fazer, ocupado, podeFazer, input } = useConcluir(t, mudou, comemorar);
+  const ativo = !soVer && podeFazer;
+  const meta = [t.hora, `+${t.pontos} pts`, t.situacao !== 'disponivel' ? SITUACOES[t.situacao] : null].filter(Boolean).join(' · ');
   return (
     <div className={`cartao missao missao-${t.situacao}`}>
       <span className="missao-icone">{t.icone}</span>
       <div className="missao-texto">
         <strong>{t.titulo}</strong>
-        <small>{meta}{t.modo === 'foto' && podeFazer ? ' · com foto' : ''}{t.modo === 'aprovacao' && podeFazer ? ' · precisa de aprovação' : ''}</small>
-        {t.motivo && <small className="aviso-refazer">{t.motivo}</small>}
+        <small>{meta}</small>
       </div>
       {!soVer && (
-        <button className={`marcar ${FEITAS.has(t.situacao) ? 'marcada' : ''}`} onClick={tocar} disabled={!podeFazer || ocupado}
-          aria-label={podeFazer ? `Concluir ${t.titulo}` : SITUACOES[t.situacao]}>
-          {t.situacao === 'concluida' ? <Icone nome="check" /> : t.situacao === 'aguardando' ? <Icone nome="relogio" tamanho={18} /> : t.modo === 'foto' ? <Icone nome="camera" tamanho={18} /> : null}
+        <button className={`marcar ${FEITAS.has(t.situacao) ? 'marcada' : ''}`} onClick={fazer} disabled={!ativo || ocupado}
+          aria-label={ativo ? `Concluir ${t.titulo}` : SITUACOES[t.situacao]}>
+          {t.situacao === 'concluida' ? <Icone nome="check" tamanho={26} /> : t.situacao === 'aguardando' ? <Icone nome="relogio" tamanho={22} /> : t.modo === 'foto' ? <Icone nome="camera" tamanho={22} /> : null}
         </button>
       )}
-      <input ref={foto} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) enviar(f); }} />
+      {input}
     </div>
   );
 }
@@ -212,20 +252,29 @@ function rotuloDia(data: string) {
 
 // ---------- pet ----------
 
-function TelaPet({ pet, humor, mudou, comemorar }: { pet: PetInfo; humor: 'feliz' | 'triste' | 'dormindo'; mudou: () => void; comemorar: (t: string) => void }) {
+function TelaPet({ pet, hoje, mudou }: { pet: PetInfo; hoje: TarefaDoDia[]; mudou: () => void }) {
   const colecao = useCarregar(() => api<{ especie: string; pet_nome: string; concluido_em: number }[]>('/eu/colecao'));
   const [novo, setNovo] = useState(false);
+  const [acao, setAcao] = useState<Acao>(null);
   const cuidar = async (tipo: 'alimentar' | 'banho') => {
-    try { await api(`/eu/pet/${tipo}`, { method: 'POST' }); comemorar(`+${MOEDAS_CUIDADO} moedinhas!`); } catch (e: any) { avisar(e.message, 'erro'); }
+    try {
+      await api(`/eu/pet/${tipo}`, { method: 'POST' });
+      setAcao({ tipo: tipo === 'alimentar' ? 'comer' : 'banho', id: Date.now() });
+      avisar(`+${MOEDAS_CUIDADO} moedinhas!`);
+      // espera a animação antes de recarregar (o botão vira "já comeu")
+      setTimeout(mudou, 1700);
+    } catch (e: any) { avisar(e.message, 'erro'); }
   };
+  const c = clima(pet, hoje, 'pet');
   return (
     <div className="pagina">
-      <Topo titulo="Meu pet" />
-      <div className="cartao cartao-pet-grande">
-        <span className="selo"><Icone nome="estrela" tamanho={14} /> Nível {pet.nivel}</span>
-        <Pet especie={pet.especie} nivel={pet.nivel} humor={humor} tamanho={210} className="flutuar" />
+      <div className="palco palco-grande" style={{ ['--tom' as any]: especie(pet.especie).barriga }}>
+        <div className="palco-topo">
+          <span className="selo"><Icone nome="estrela" tamanho={14} /> Nível {pet.nivel}</span>
+          <span className="selo selo-claro">{pet.estagio}</span>
+        </div>
+        <PetVivo especie={pet.especie} nivel={pet.nivel} humor={c.humor} fala={c.fala} acao={acao} tamanho={220} />
         <h2>{pet.nome}</h2>
-        <p className="suave">{pet.estagio} · {especie(pet.especie).nome}</p>
         <div className="linha-barra"><Barra pct={pet.pct} /><strong>{pet.pct}%</strong></div>
         <p className="suave">{pet.completo ? 'Cresceu todo! Ele pode ir para a coleção.' : falta(pet)}</p>
       </div>
@@ -238,14 +287,14 @@ function TelaPet({ pet, humor, mudou, comemorar }: { pet: PetInfo; humor: 'feliz
       )}
       <div className="duas">
         <button className="cartao cuidado" onClick={() => cuidar('alimentar')} disabled={pet.alimentado}>
-          <Icone nome="comida" tamanho={28} />
-          <strong>Dar comida</strong>
-          <small>{pet.alimentado ? 'Já comeu hoje' : <>+{MOEDAS_CUIDADO} <Moeda tamanho={14} /></>}</small>
+          <span className="cuidado-emoji">🍎</span>
+          <strong>Comida</strong>
+          <small>{pet.alimentado ? 'Já comeu ✓' : <>+{MOEDAS_CUIDADO} <Moeda tamanho={16} /></>}</small>
         </button>
         <button className="cartao cuidado" onClick={() => cuidar('banho')} disabled={pet.banho}>
-          <Icone nome="banho" tamanho={28} />
-          <strong>Dar banho</strong>
-          <small>{pet.banho ? 'Já tomou banho hoje' : <>+{MOEDAS_CUIDADO} <Moeda tamanho={14} /></>}</small>
+          <span className="cuidado-emoji">🛁</span>
+          <strong>Banho</strong>
+          <small>{pet.banho ? 'Tá limpinho ✓' : <>+{MOEDAS_CUIDADO} <Moeda tamanho={16} /></>}</small>
         </button>
       </div>
       <h2 className="secao">Evolução</h2>
@@ -398,6 +447,7 @@ function Progresso({ voltar }: { voltar: () => void }) {
 function Mais({ nome, mudou, progresso }: { nome: string; mudou: () => void; progresso: () => void }) {
   const [pin, setPin] = useState(false);
   const [erro, setErro] = useState<string>();
+  const [som, setSom] = useState(somLigado);
   if (pin) {
     return (
       <div className="pagina centro">
@@ -415,6 +465,10 @@ function Mais({ nome, mudou, progresso }: { nome: string; mudou: () => void; pro
         <button className="cartao opcao" onClick={async () => { await api('/conta/perfil/sair', { method: 'POST' }); mudou(); }}>
           <Icone nome="pessoas" /><span><strong>Trocar de perfil</strong><small>Sair do perfil de {nome}</small></span><Icone nome="seta" />
         </button>
+        <label className="cartao opcao">
+          <Icone nome="som" /><span><strong>Sons</strong><small>{som ? 'Ligados' : 'Desligados'}</small></span>
+          <span className="interruptor"><input type="checkbox" checked={som} onChange={(e) => { ligarSom(e.target.checked); setSom(e.target.checked); if (e.target.checked) tocar('pop'); }} aria-label="Sons" /><span /></span>
+        </label>
         <button className="cartao opcao" onClick={() => setPin(true)}><Icone nome="cadeado" /><span><strong>Área do responsável</strong><small>Precisa do PIN</small></span><Icone nome="seta" /></button>
       </div>
     </div>
