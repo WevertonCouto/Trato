@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { api } from '../api.ts';
-import { Icone, Logo } from '../ui.tsx';
+import { Icone, LinksLegais, Logo } from '../ui.tsx';
 import { Pet } from '../pet.tsx';
+import { API_BASE } from '../plataforma.ts';
 
 type Passo = 'abertura' | 'boas-vindas' | 'entrar' | 'cadastro' | 'codigo';
 
@@ -41,6 +42,7 @@ export function Entrada({ pronto }: { pronto: () => void }) {
           <button className="btn btn-claro btn-grande" onClick={() => setPasso('cadastro')}>Criar minha conta</button>
           <button className="btn-link" onClick={() => setPasso('codigo')}><Icone nome="celular" tamanho={18} /> Entrar com código (celular da criança)</button>
         </div>
+        <LinksLegais />
       </div>
     );
   }
@@ -87,14 +89,16 @@ function Entrar({ voltar, cadastro, pronto }: { voltar: () => void; cadastro: ()
 
 function Cadastro({ voltar, entrar, pronto }: { voltar: () => void; entrar: () => void; pronto: () => void }) {
   const [f, setF] = useState({ nome: '', email: '', senha: '', pin: '', pin2: '' });
+  const [aceite, setAceite] = useState(false);
   const [erro, setErro] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const campo = (k: keyof typeof f) => ({ value: f[k], onChange: (e: any) => setF({ ...f, [k]: e.target.value }) });
   const enviar = async (e: FormEvent) => {
     e.preventDefault();
     if (f.pin !== f.pin2) return setErro('Os dois PINs não são iguais.');
+    if (!aceite) return setErro('Para criar a conta, marque que aceita os termos.');
     setOcupado(true);
-    try { await api('/conta/cadastro', { body: f }); pronto(); } catch (err: any) { setErro(err.message); } finally { setOcupado(false); }
+    try { await api('/conta/cadastro', { body: { ...f, aceite } }); pronto(); } catch (err: any) { setErro(err.message); } finally { setOcupado(false); }
   };
   return (
     <form className="pagina formulario" onSubmit={enviar}>
@@ -110,6 +114,15 @@ function Cadastro({ voltar, entrar, pronto }: { voltar: () => void; entrar: () =
         <label>Repita o PIN<input inputMode="numeric" pattern="\d{4}" maxLength={4} autoComplete="off" {...campo('pin2')} required /></label>
       </div>
       <small className="suave">O PIN tem 4 números e protege a sua área (tarefas, aprovações e conta) no aparelho que a criança usa.</small>
+      {/* LGPD art. 14: consentimento específico e em destaque do responsável (a versão e a data ficam na conta) */}
+      <label className="aceite">
+        <input type="checkbox" checked={aceite} onChange={(e) => { setAceite(e.target.checked); setErro(''); }} required />
+        <span>
+          Li e aceito os <a href={`${API_BASE}/termos`} target="_blank" rel="noreferrer">Termos de Uso</a> e a{' '}
+          <a href={`${API_BASE}/privacidade`} target="_blank" rel="noreferrer">Política de Privacidade</a> e autorizo,
+          como responsável, o uso dos dados da criança para o funcionamento do app.
+        </span>
+      </label>
       {erro && <p className="erro" role="alert">{erro}</p>}
       <button className="btn btn-grande" disabled={ocupado}>{ocupado ? 'Criando…' : 'Criar conta'}</button>
       <button type="button" className="btn-link" onClick={entrar}>Já tenho conta</button>

@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, urlAutenticada, type Conta, type Tarefa } from '../api.ts';
-import { Icone, Logo, Modal, Moeda, Topo, avisar, useAoVoltar, useCarregar } from '../ui.tsx';
+import { Icone, LinksLegais, Logo, Modal, Moeda, Topo, avisar, useAoVoltar, useCarregar } from '../ui.tsx';
 import { Pet } from '../pet.tsx';
 import { CORES_PERFIL, DIAS_CURTOS, ESPECIES, MODOS, descreverRecorrencia, type Modo } from '../../../src/shared/regras.ts';
 import { ICONES_RECOMPENSA, ICONES_TAREFA, MODELOS_RECOMPENSA, MODELOS_TAREFA } from '../modelos.ts';
@@ -448,6 +448,7 @@ function TelaConta({ conta, mudou, voltar }: { conta: Extract<Conta, { logado: t
       <div className="botoes">
         <button className="btn btn-claro btn-grande" onClick={async () => { await api('/conta/sair', { method: 'POST' }); mudou(); }}><Icone nome="sair" /> Sair da conta neste aparelho</button>
         <button className="btn-link perigo" onClick={() => setExcluir(true)}>Excluir conta e dados</button>
+        <LinksLegais />
       </div>
       <Modal aberto={excluir} fechar={() => setExcluir(false)} titulo="Excluir conta">
         <form className="formulario" onSubmit={async (e) => {
@@ -702,9 +703,8 @@ function TelaPlano({ voltar, conta }: { voltar: () => void; conta: () => void })
         </div>
       ))}
 
-      <div className="links-legais">
-        <a href={`${API_BASE}/privacidade.html`} target="_blank" rel="noreferrer">Política de privacidade</a>
-        <a href={`${API_BASE}/termos.html`} target="_blank" rel="noreferrer">Termos de uso</a>
+      <div className="rodape-legal">
+        <LinksLegais />
         <button className="btn-link" onClick={conta}>Excluir conta e dados</button>
       </div>
     </div>

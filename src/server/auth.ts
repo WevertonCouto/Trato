@@ -12,6 +12,7 @@ import crypto from 'node:crypto';
 import { Hono, type Context, type MiddlewareHandler } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { SECRET, all, confere, get, hash, now, run, uid } from './db.ts';
+import { VERSAO_TERMOS } from '../shared/legal.ts';
 
 export type Sessao = { c?: string; ce?: number; a?: number; p?: string; d?: 'r' | 'c' };
 export type Env = { Variables: { familia: string; crianca: string; sessao: Sessao; sessaoMudou: boolean; nativo: boolean } };
@@ -150,9 +151,11 @@ authRoutes.post('/conta/cadastro', async (c) => {
   if (!emailValido(email)) return c.json({ erro: 'E-mail inválido.' }, 400);
   if (typeof b.senha !== 'string' || b.senha.length < 8) return c.json({ erro: 'A senha precisa ter pelo menos 8 caracteres.' }, 400);
   if (!pinValido(b.pin)) return c.json({ erro: 'O PIN precisa ter 4 números.' }, 400);
+  // LGPD art. 14: consentimento específico e em destaque do responsável para os dados da criança
+  if (b.aceite !== true) return c.json({ erro: 'Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.' }, 400);
   if (get('SELECT 1 FROM familias WHERE email = ?', email)) return c.json({ erro: 'Já existe uma conta com esse e-mail.' }, 409);
   const id = uid();
-  run('INSERT INTO familias (id, nome, email, senha, pin, criado_em) VALUES (?, ?, ?, ?, ?, ?)', id, nomeFamilia, email, hash(b.senha), hash(b.pin), now());
+  run('INSERT INTO familias (id, nome, email, senha, pin, criado_em, aceite_em, aceite_versao) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', id, nomeFamilia, email, hash(b.senha), hash(b.pin), now(), now(), VERSAO_TERMOS);
   entrar(c, id, { a: now() + PRAZO_ADULTO.compartilhado });
   return c.json({ ok: true });
 });

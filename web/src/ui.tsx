@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { tocar } from './sons.ts';
+import { API_BASE } from './plataforma.ts';
+import { LINKS_LEGAIS } from '../../src/shared/legal.ts';
 
 // ---------- ícones (traço, 24×24) ----------
 
@@ -211,4 +213,13 @@ export function useAoVoltar(recarregar: () => void, intervalo: number) {
     const t = setInterval(() => document.visibilityState === 'visible' && ref.current(), intervalo);
     return () => { document.removeEventListener('visibilitychange', visivel); clearInterval(t); };
   }, [intervalo]);
+}
+
+/** Links das páginas públicas (privacidade, termos, cancelamento, excluir conta); no app nativo apontam para o site. */
+export function LinksLegais() {
+  return (
+    <nav className="links-legais" aria-label="Termos e privacidade">
+      {LINKS_LEGAIS.map((l) => <a key={l.pagina} href={`${API_BASE}/${l.pagina}`} target="_blank" rel="noreferrer">{l.nome}</a>)}
+    </nav>
+  );
 }

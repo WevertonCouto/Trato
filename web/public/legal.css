@@ -1,0 +1,30 @@
+/* Páginas públicas do Trato (privacidade, termos, cancelamento, excluir conta) */
+:root { --fundo: #FBF6EE; --tinta: #2B2340; --suave: #6E6682; --roxo: #7C5CFC; --coral: #FF7A59; --linha: #EFE7DA; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fundo); color: var(--tinta); font: 17px/1.65 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+header { background: #fff; border-bottom: 1px solid var(--linha); }
+header .faixa { max-width: 760px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.logo { font: 800 1.8rem/1 'Baloo 2', 'Nunito', system-ui, sans-serif; text-decoration: none; letter-spacing: -0.02em; }
+.logo .a { color: var(--roxo); } .logo .b { color: var(--coral); }
+nav { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.92rem; }
+nav a { color: var(--suave); text-decoration: none; font-weight: 700; }
+nav a[aria-current] { color: var(--roxo); }
+main { max-width: 760px; margin: 0 auto; padding: 28px 16px 64px; }
+h1 { font: 800 2rem/1.15 'Baloo 2', 'Nunito', system-ui, sans-serif; color: var(--roxo); margin: 0 0 6px; }
+h2 { font-size: 1.2rem; margin: 2em 0 0.4em; }
+h3 { font-size: 1.02rem; margin: 1.4em 0 0.3em; }
+.vigencia { color: var(--suave); font-size: 0.95rem; margin: 0 0 20px; }
+.resumo { background: #fff; border-radius: 18px; padding: 16px 20px; box-shadow: 0 2px 0 rgba(43,35,64,.04), 0 8px 24px rgba(43,35,64,.06); }
+.resumo ul { margin: 0.4em 0 0; padding-left: 1.2em; }
+.aviso { background: #FFF3D1; border-radius: 14px; padding: 12px 16px; font-size: 0.95rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.95rem; background: #fff; border-radius: 14px; overflow: hidden; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--linha); }
+th { background: #F4EFFF; }
+.tabela { overflow-x: auto; }
+/* dados que o dono do app ainda precisa preencher */
+mark { background: #FFE066; color: #5B3B00; padding: 0 4px; border-radius: 4px; font-weight: 800; }
+footer { border-top: 1px solid var(--linha); color: var(--suave); font-size: 0.9rem; }
+footer .faixa { max-width: 760px; margin: 0 auto; padding: 18px 16px 32px; }
+a { color: var(--roxo); }
+ol li, ul li { margin: 0.2em 0; }
+.passos li { margin: 0.5em 0; }

@@ -112,6 +112,8 @@ const addColumn = (table: string, col: string, def: string) => {
   if ((db.pragma(`table_info(${table})`) as { name: string }[]).some((c) => c.name === col)) return;
   db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
 };
+addColumn('familias', 'aceite_em', 'INTEGER'); // quando o responsável aceitou os termos e a privacidade (e autorizou os dados da criança)
+addColumn('familias', 'aceite_versao', 'TEXT'); // versão aceita (VERSAO_TERMOS em src/shared/legal.ts)
 addColumn('familias', 'uso', 'TEXT'); // resposta de "Como vocês vão usar?": 'um' (celular para todos) ou 'cada' (cada um com o seu)
 
 export type Row = Record<string, any>;

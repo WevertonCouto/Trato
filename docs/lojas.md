@@ -18,7 +18,7 @@ O código já está pronto: app Android com Capacitor, compras com RevenueCat, w
   - Plano grátis: 1 criança, missões ilimitadas (o Plano Família libera até 6 crianças). Para mudar, edite `PLANO_GRATIS` em `src/server/assinatura.ts`.
 - **Na web:** aparece "Assine pelo app na Google Play". Não há pagamento por fora.
 - **Regras para apps de crianças:** sem anúncios e sem analytics de terceiros.
-  - Política de privacidade: `/privacidade.html`. Termos: `/termos.html`. **São rascunhos: preencha os campos entre colchetes.**
+  - Política de privacidade: `/privacidade`. Termos: `/termos`. Cancelamento: `/cancelamento`. Exclusão de conta: `/excluir-conta`. **São rascunhos: preencha os campos entre colchetes.**
   - A exclusão de conta fica no app: Área do responsável → Conta.
 
 ## Produtos e preços
@@ -47,7 +47,7 @@ Conta do "economize": 12 × R$ 7,99 = R$ 95,88 por ano; 1 − 59,88 ÷ 95,88 ≈
      - Não compartilhados para publicidade.
      - Criptografados em trânsito.
      - Exclusão disponível.
-   - **Política de privacidade:** `https://SEU-DOMINIO/privacidade.html` (o servidor já serve esse arquivo).
+   - **Política de privacidade:** `https://SEU-DOMINIO/privacidade` (o servidor já serve esse arquivo).
    - **Anúncios:** não.
    - **Classificação de conteúdo:** responda ao questionário.
 5. **Assinaturas** (Monetizar → Produtos → Assinaturas). Crie as duas:

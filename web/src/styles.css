@@ -488,3 +488,7 @@ label.opcao { flex-direction: row; font-weight: inherit; font-size: inherit; cur
 .bloco-roxo { background: var(--roxo); color: #fff; box-shadow: 0 6px 0 var(--roxo-escuro); }
 .bloco-roxo strong { color: #fff; }
 .opcao > .interruptor { flex: none; }
+.rodape-legal { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 8px; }
+.aceite { flex-direction: row; align-items: flex-start; gap: 12px; font-weight: 600; font-size: 0.92rem; line-height: 1.4; background: var(--cartao); border: 2px solid var(--roxo); border-radius: 16px; padding: 12px 14px; }
+.aceite input { width: 24px; height: 24px; flex: none; margin: 2px 0 0; accent-color: var(--roxo); padding: 0; }
+.aceite a { color: var(--roxo); font-weight: 800; }
