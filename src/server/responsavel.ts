@@ -5,6 +5,7 @@ import { Hono, type Context } from 'hono';
 import { FOTOS_DIR, all, confere, db, dia, get, hash, now, run, uid, type Row } from './db.ts';
 import { exigeAdulto, limparSessao, type Env } from './auth.ts';
 import { aprovarEntrega, doDia, publica, sequencia } from './rotina.ts';
+import { limitesDa, mensagemLimite, PLANO_FAMILIA } from './assinatura.ts';
 import { CORES_PERFIL, ESPECIES, MODOS } from '../shared/regras.ts';
 
 export const responsavelRoutes = new Hono<Env>();
@@ -41,7 +42,9 @@ responsavelRoutes.post('/criancas', async (c) => {
   if (!nome) return c.json({ erro: 'Diga o nome da criança.' }, 400);
   if (!pet) return c.json({ erro: 'Dê um nome para o pet.' }, 400);
   if (pin === false) return c.json({ erro: 'O PIN da criança precisa ter 4 números.' }, 400);
-  if ((get<{ n: number }>('SELECT COUNT(*) n FROM criancas WHERE familia_id = ?', c.get('familia'))!.n) >= 6) return c.json({ erro: 'Dá para cadastrar até 6 crianças.' }, 409);
+  const nCriancas = get<{ n: number }>('SELECT COUNT(*) n FROM criancas WHERE familia_id = ?', c.get('familia'))!.n;
+  if (nCriancas >= PLANO_FAMILIA.criancas) return c.json({ erro: `Dá para cadastrar até ${PLANO_FAMILIA.criancas} crianças.` }, 409);
+  if (nCriancas >= limitesDa(c.get('familia')).criancas) return c.json({ erro: mensagemLimite('criancas'), plano: true }, 402);
   const id = uid();
   const cor = CORES_PERFIL.includes(b.cor) ? b.cor : CORES_PERFIL[0];
   run('INSERT INTO criancas (id, familia_id, nome, cor, pin, especie, pet_nome, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', id, c.get('familia'), nome, cor, pin ? hash(pin) : null, esp, pet, now());
@@ -100,6 +103,7 @@ responsavelRoutes.post('/tarefas', async (c) => {
   if (!k) return c.json({ erro: 'Perfil não encontrado.' }, 404);
   const t = lerTarefa(b);
   if (typeof t === 'string') return c.json({ erro: t }, 400);
+  if (cheioDeMissoes(c, k.id)) return c.json({ erro: mensagemLimite('missoes'), plano: true }, 402);
   const id = uid();
   run(
     'INSERT INTO tarefas (id, familia_id, crianca_id, titulo, icone, pontos, modo, repeticao, dias, dia_mes, hora, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -108,6 +112,10 @@ responsavelRoutes.post('/tarefas', async (c) => {
   return c.json({ id });
 });
 
+/** Plano grátis: no máximo N missões ativas por criança (as que já existem nunca são desligadas sozinhas). */
+const cheioDeMissoes = (c: Context<Env>, crianca: string) =>
+  get<{ n: number }>('SELECT COUNT(*) n FROM tarefas WHERE crianca_id = ? AND ativa = 1 AND excluida = 0', crianca)!.n >= limitesDa(c.get('familia')).missoes;
+
 const minhaTarefa = (c: Context<Env>) => get('SELECT * FROM tarefas WHERE id = ? AND familia_id = ? AND excluida = 0', c.req.param('id'), c.get('familia'));
 
 responsavelRoutes.patch('/tarefas/:id', async (c) => {
@@ -115,6 +123,7 @@ responsavelRoutes.patch('/tarefas/:id', async (c) => {
   if (!atual) return c.json({ erro: 'Missão não encontrada.' }, 404);
   const b = await corpo(c);
   if (Object.keys(b).length === 1 && 'ativa' in b) {
+    if (b.ativa && !atual.ativa && cheioDeMissoes(c, atual.crianca_id)) return c.json({ erro: mensagemLimite('missoes'), plano: true }, 402);
     run('UPDATE tarefas SET ativa = ? WHERE id = ?', b.ativa ? 1 : 0, atual.id);
     return c.json({ ok: true });
   }

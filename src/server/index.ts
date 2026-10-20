@@ -1,18 +1,31 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import './db.ts';
-import { authRoutes, sessao, type Env } from './auth.ts';
+import { HEADER_SESSAO, authRoutes, sessao, type Env } from './auth.ts';
+import { assinaturaRoutes, webhookRoutes } from './assinatura.ts';
 import { criancaRoutes } from './crianca.ts';
 import { responsavelRoutes } from './responsavel.ts';
 
 const app = new Hono<Env>();
 
+// o app nativo (Capacitor) roda em https://localhost (Android) ou capacitor://localhost (iPhone) e chama a API pública
+const origens = (process.env.CORS_ORIGINS || 'https://localhost,capacitor://localhost,http://localhost').split(',').map((o) => o.trim());
+app.use('/api/*', cors({
+  origin: (o) => (origens.includes(o) ? o : null),
+  allowHeaders: ['Content-Type', 'Authorization', 'X-Trato-Nativo'],
+  exposeHeaders: [HEADER_SESSAO],
+  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  maxAge: 86400,
+}));
+app.route('/api', webhookRoutes);
 app.use('/api/*', sessao);
 app.route('/api', authRoutes);
 app.route('/api/eu', criancaRoutes);
+app.route('/api/adulto/assinatura', assinaturaRoutes);
 app.route('/api/adulto', responsavelRoutes);
 app.all('/api/*', (c) => c.json({ erro: 'Rota não encontrada.' }, 404));
 app.onError((err, c) => {

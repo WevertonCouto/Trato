@@ -2,3 +2,9 @@ node_modules
 web/dist
 data
 .env
+.env.android
+# chaves de assinatura do app (NUNCA no git)
+*.jks
+*.keystore
+keystore.properties
+android/app/release/

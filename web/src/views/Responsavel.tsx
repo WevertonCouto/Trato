@@ -1,12 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { api, type Conta, type Tarefa } from '../api.ts';
+import { api, urlAutenticada, type Conta, type Tarefa } from '../api.ts';
 import { Icone, Logo, Modal, Moeda, Topo, avisar, useAoVoltar, useCarregar } from '../ui.tsx';
 import { Pet } from '../pet.tsx';
 import { CORES_PERFIL, DIAS_CURTOS, ESPECIES, MODOS, descreverRecorrencia, type Modo } from '../../../src/shared/regras.ts';
 import { ICONES_RECOMPENSA, ICONES_TAREFA, MODELOS_RECOMPENSA, MODELOS_TAREFA } from '../modelos.ts';
+import { comprar, comprasDisponiveis, pacotes, restaurar, type Pacote } from '../compras.ts';
+import { API_BASE, LINK_LOJA } from '../plataforma.ts';
 
 type Crianca = { id: string; nome: string; cor: string; especie: string; pet_nome: string; tem_pin: boolean; moedas: number; xp: number; sequencia: number; hoje: { total: number; feitas: number } };
-type Tela = 'painel' | 'missoes' | 'recompensas' | 'perfis' | 'aprovacoes' | 'conta' | 'celulares';
+type Tela = 'painel' | 'missoes' | 'recompensas' | 'perfis' | 'aprovacoes' | 'conta' | 'celulares' | 'plano';
 type Aprovacoes = {
   entregas: { id: string; data: string; foto: string | null; pontos: number; titulo: string; icone: string; modo: Modo; crianca: string; cor: string }[];
   pedidos: { id: string; titulo: string; icone: string; custo: number; crianca: string; cor: string }[];
@@ -37,6 +39,7 @@ export function AreaResponsavel({ conta, mudou }: { conta: Extract<Conta, { loga
   if (tela === 'perfis') return <Perfis criancas={lista} mudou={criancas.recarregar} entrou={mudou} voltar={() => ir('painel')} />;
   if (tela === 'aprovacoes') return <TelaAprovacoes dados={aprov.dados} mudou={aprov.recarregar} voltar={() => ir('painel')} />;
   if (tela === 'conta') return <TelaConta conta={conta} mudou={mudou} voltar={() => ir('painel')} />;
+  if (tela === 'plano') return <TelaPlano voltar={() => ir('painel')} conta={() => ir('conta')} />;
   if (tela === 'celulares') return <Celulares conta={conta} criancas={lista} mudou={mudou} voltar={() => ir('painel')} />;
 
   return (
@@ -47,6 +50,7 @@ export function AreaResponsavel({ conta, mudou }: { conta: Extract<Conta, { loga
       </header>
       <div className="cartao conectado"><small>Conectado como</small><strong>{conta.familia.email}</strong></div>
       {!conta.familia.uso && <PerguntaUso criancas={lista} mudou={mudou} />}
+      <FaixaPlano abrir={() => ir('plano')} />
 
       <div className="seletor" role="tablist" aria-label="Criança">
         {lista.map((k) => (
@@ -79,6 +83,9 @@ export function AreaResponsavel({ conta, mudou }: { conta: Extract<Conta, { loga
         </button>
         <button className="cartao opcao" onClick={() => ir('celulares')}>
           <Icone nome="celular" /><span><strong>Celulares</strong><small>{conta.aparelho === 'responsavel' ? 'Este é o seu celular' : 'Um para todos ou cada um com o seu'}</small></span><Icone nome="seta" />
+        </button>
+        <button className="cartao opcao" onClick={() => ir('plano')}>
+          <Icone nome="coroa" /><span><strong>Plano da família</strong><small>Assinatura, restaurar compras</small></span><Icone nome="seta" />
         </button>
         <button className="cartao opcao" onClick={() => ir('conta')}>
           <Icone nome="cadeado" /><span><strong>Conta</strong><small>PIN, senha e dados</small></span><Icone nome="seta" />
@@ -381,7 +388,7 @@ function TelaAprovacoes({ dados, mudou, voltar }: { dados: Aprovacoes | null; mu
               <span className="missao-icone">{e.icone}</span>
               <div className="missao-texto"><strong>{e.titulo}</strong><small><b style={{ color: e.cor }}>{e.crianca}</b> · +{e.pontos} pts · {new Date(`${e.data}T12:00:00`).toLocaleDateString('pt-BR')}</small></div>
             </div>
-            {e.foto && <button className="foto-prova" onClick={() => setFoto(e.foto)}><img src={`/api/adulto/fotos/${e.foto}`} alt={`Foto de ${e.titulo}`} loading="lazy" /></button>}
+            {e.foto && <button className="foto-prova" onClick={() => setFoto(e.foto)}><Foto arquivo={e.foto} alt={`Foto de ${e.titulo}`} /></button>}
             <div className="duas">
               <button className="btn btn-claro" onClick={() => decidir('entregas', e.id, false)}>Pedir para refazer</button>
               <button className="btn" onClick={() => decidir('entregas', e.id, true)}><Icone nome="check" /> Aprovar</button>
@@ -405,7 +412,7 @@ function TelaAprovacoes({ dados, mudou, voltar }: { dados: Aprovacoes | null; mu
         ))}
       </div>
       <Modal aberto={!!foto} fechar={() => setFoto(null)} titulo="Foto da missão">
-        {foto && <img className="foto-grande" src={`/api/adulto/fotos/${foto}`} alt="Foto enviada pela criança" />}
+        {foto && <Foto arquivo={foto} alt="Foto enviada pela criança" className="foto-grande" />}
       </Modal>
     </div>
   );
@@ -559,6 +566,145 @@ function CodigoConexao({ crianca }: { crianca: Crianca }) {
           </>
         : <p className="suave centro-texto">O código venceu.</p>)}
       <button className="btn btn-claro" onClick={gerar}>Gerar outro código</button>
+    </div>
+  );
+}
+
+/** Foto de comprovação (só o responsável vê; no app nativo vem com o token da sessão). */
+function Foto({ arquivo, alt, className }: { arquivo: string; alt: string; className?: string }) {
+  const [src, setSrc] = useState('');
+  useEffect(() => {
+    let url = '';
+    urlAutenticada(`/adulto/fotos/${arquivo}`).then((u) => { url = u; setSrc(u); });
+    return () => { if (url.startsWith('blob:')) URL.revokeObjectURL(url); };
+  }, [arquivo]);
+  return src ? <img className={className} src={src} alt={alt} loading="lazy" /> : <div className="foto-carregando" />;
+}
+
+// ---------- plano da família (assinatura) ----------
+
+type InfoPlano = {
+  familia_id: string;
+  plano: { ativo: boolean; situacao: 'ativa' | 'teste' | 'cancelada' | 'problema_pagamento' | 'expirada' | null; produto: string | null; expira_em: number | null };
+  gratis: { criancas: number; missoes: number };
+  familia: { criancas: number; missoes: number };
+  uso: { criancas: number; missoes: number };
+};
+
+const data = (ms: number) => new Date(ms).toLocaleDateString('pt-BR');
+
+function statusPlano(p: InfoPlano['plano']) {
+  if (!p.ativo) return { titulo: 'Plano grátis', texto: '' };
+  const ate = p.expira_em ? data(p.expira_em) : null;
+  switch (p.situacao) {
+    case 'teste': return { titulo: 'Teste grátis', texto: ate ? `Até ${ate}. Depois, a assinatura começa sozinha.` : '' };
+    case 'cancelada': return { titulo: 'Plano Família', texto: ate ? `Cancelado: vale até ${ate}.` : 'Cancelado.' };
+    case 'problema_pagamento': return { titulo: 'Plano Família', texto: 'A loja não conseguiu cobrar. Confira a forma de pagamento na Google Play.' };
+    default: return { titulo: 'Plano Família', texto: ate ? `Renova em ${ate}.` : 'Ativo.' };
+  }
+}
+
+/** Faixa no painel: só aparece no plano grátis. */
+function FaixaPlano({ abrir }: { abrir: () => void }) {
+  const { dados } = useCarregar(() => api<InfoPlano>('/adulto/assinatura'));
+  if (!dados || dados.plano.ativo) return null;
+  return (
+    <button className="cartao faixa-plano" onClick={abrir}>
+      <Icone nome="coroa" />
+      <span><strong>Plano grátis</strong><small>{dados.gratis.criancas} criança e {dados.gratis.missoes} missões. Conheça o Plano Família</small></span>
+      <Icone nome="seta" />
+    </button>
+  );
+}
+
+function TelaPlano({ voltar, conta }: { voltar: () => void; conta: () => void }) {
+  const info = useCarregar(() => api<InfoPlano>('/adulto/assinatura'));
+  const [lista, setLista] = useState<Pacote[] | null>(null);
+  const [escolhido, setEscolhido] = useState<string>('');
+  const [ocupado, setOcupado] = useState(false);
+  const [erro, setErro] = useState('');
+  const familia = info.dados?.familia_id;
+
+  useEffect(() => {
+    if (!familia || !comprasDisponiveis) return;
+    pacotes(familia).then((ps) => {
+      setLista(ps);
+      setEscolhido((ps.find((p) => p.tipo === 'anual') ?? ps[0])?.id ?? '');
+    }).catch((e) => setErro(e.message || 'Não consegui falar com a loja.'));
+  }, [familia]);
+
+  const sincronizar = async () => {
+    await api('/adulto/assinatura/sincronizar', { method: 'POST' }).catch((e) => avisar(e.message, 'erro'));
+    info.recarregar();
+  };
+  const assinar = async () => {
+    const p = lista?.find((x) => x.id === escolhido);
+    if (!p || !familia) return;
+    setOcupado(true);
+    try {
+      if (await comprar(familia, p)) { avisar('Plano Família ativado! Obrigado.'); await sincronizar(); }
+    } catch (e: any) { avisar(e.message || 'A compra não foi concluída.', 'erro'); } finally { setOcupado(false); }
+  };
+  const restaurarCompras = async () => {
+    if (!familia) return;
+    setOcupado(true);
+    try { await restaurar(familia); await sincronizar(); avisar('Compras restauradas.'); } catch (e: any) { avisar(e.message, 'erro'); } finally { setOcupado(false); }
+  };
+
+  const d = info.dados;
+  const st = d ? statusPlano(d.plano) : null;
+  return (
+    <div className="pagina">
+      <Topo titulo="Plano da família" voltar={voltar} />
+      {d && st && (
+        <div className={`cartao plano-status ${d.plano.ativo ? 'ativo' : ''}`}>
+          <Icone nome="coroa" tamanho={28} />
+          <div><strong>{st.titulo}</strong>{st.texto && <small>{st.texto}</small>}</div>
+        </div>
+      )}
+      {d && (
+        <div className="cartao plano-compara">
+          <div><small>Grátis</small><strong>{d.gratis.criancas} criança</strong><strong>{d.gratis.missoes} missões cada</strong></div>
+          <div className="destaque-plano"><small>Plano Família</small><strong>até {d.familia.criancas} crianças</strong><strong>missões sem limite</strong></div>
+        </div>
+      )}
+      {d && !d.plano.ativo && (d.uso.criancas > d.gratis.criancas || d.uso.missoes > d.gratis.missoes) && (
+        <p className="suave">Nada do que vocês já criaram some: as crianças continuam com as missões de hoje. Só não dá para criar além do plano grátis.</p>
+      )}
+
+      {!d?.plano.ativo && (comprasDisponiveis ? (
+        <>
+          {erro && <p className="erro">{erro}</p>}
+          {lista && !lista.length && <p className="suave">Os planos ainda não estão disponíveis na loja.</p>}
+          <div className="pacotes">
+            {lista?.map((p) => (
+              <button key={p.id} className={`cartao pacote ${escolhido === p.id ? 'escolhido' : ''}`} onClick={() => setEscolhido(p.id)} aria-pressed={escolhido === p.id}>
+                {p.economia !== null && p.economia > 0 && <span className="selo-economia">economize {p.economia}%</span>}
+                <strong className="pacote-nome">{p.tipo === 'anual' ? 'Anual' : p.tipo === 'mensal' ? 'Mensal' : p.original.product.title}</strong>
+                {p.porMes
+                  ? <><span className="pacote-preco">{p.porMes}<small>/mês</small></span><small>{p.preco} cobrados por ano</small></>
+                  : <span className="pacote-preco">{p.preco}<small>{p.tipo === 'mensal' ? '/mês' : ''}</small></span>}
+                {p.gratis && <small className="pacote-gratis">7 dias grátis para começar</small>}
+              </button>
+            ))}
+          </div>
+          {lista && lista.length > 0 && <button className="btn btn-gigante" onClick={assinar} disabled={ocupado || !escolhido}>{ocupado ? 'Abrindo a loja…' : 'Assinar'}</button>}
+          <button className="btn-link" onClick={restaurarCompras} disabled={ocupado}>Restaurar compras</button>
+          <p className="suave letra-miuda">A assinatura renova sozinha e pode ser cancelada quando quiser em Google Play → Pagamentos e assinaturas.</p>
+        </>
+      ) : (
+        <div className="cartao loja">
+          <strong>Assine pelo app do Trato na Google Play</strong>
+          <p className="suave">Aqui no site não há pagamento. Baixe o app no celular, entre com a mesma conta e assine na área do responsável.</p>
+          <a className="btn btn-claro" href={LINK_LOJA} target="_blank" rel="noreferrer">Abrir na Google Play</a>
+        </div>
+      ))}
+
+      <div className="links-legais">
+        <a href={`${API_BASE}/privacidade.html`} target="_blank" rel="noreferrer">Política de privacidade</a>
+        <a href={`${API_BASE}/termos.html`} target="_blank" rel="noreferrer">Termos de uso</a>
+        <button className="btn-link" onClick={conta}>Excluir conta e dados</button>
+      </div>
     </div>
   );
 }

@@ -416,3 +416,31 @@ legend { font-weight: 800; font-size: 0.92rem; padding: 0; margin-bottom: 8px; }
 .codigo-grande span { display: inline-block; width: 6px; }
 .codigo-campo { font-family: var(--titulo); font-size: 2.4rem; text-align: center; letter-spacing: 0.3em; font-weight: 800; padding: 14px; }
 .aviso-celular { display: flex; gap: 10px; align-items: center; justify-content: center; color: var(--suave); font-weight: 700; }
+.foto-carregando { height: 180px; border-radius: 16px; background: var(--linha); }
+
+/* ---------- plano da família ---------- */
+.faixa-plano { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--sol-claro); color: #946700; }
+.faixa-plano > span { flex: 1; display: flex; flex-direction: column; color: var(--tinta); }
+.faixa-plano small { color: var(--suave); }
+.plano-status { display: flex; align-items: center; gap: 14px; color: var(--suave); }
+.plano-status.ativo { color: #B07A00; box-shadow: 0 0 0 3px var(--sol) inset, var(--sombra); }
+.plano-status div { display: flex; flex-direction: column; }
+.plano-status strong { font-family: var(--titulo); font-size: 1.3rem; color: var(--tinta); }
+.plano-status small { color: var(--suave); }
+.plano-compara { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; }
+.plano-compara > div { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: 16px; background: var(--fundo); }
+.plano-compara small { color: var(--suave); font-weight: 800; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.05em; }
+.plano-compara .destaque-plano { background: var(--roxo-claro); color: var(--roxo-escuro); }
+.pacotes { display: flex; flex-direction: column; gap: 10px; }
+.pacote { position: relative; display: flex; flex-direction: column; gap: 2px; width: 100%; border: 3px solid transparent; }
+.pacote.escolhido { border-color: var(--roxo); background: var(--roxo-claro); }
+.pacote-nome { font-family: var(--titulo); font-size: 1.15rem; }
+.pacote-preco { font-family: var(--titulo); font-weight: 800; font-size: 1.8rem; color: var(--roxo-escuro); line-height: 1.1; }
+.pacote-preco small { font-size: 1rem; color: var(--suave); margin-left: 2px; }
+.pacote > small { color: var(--suave); }
+.pacote-gratis { color: #137A4C !important; font-weight: 800; }
+.selo-economia { position: absolute; top: 12px; right: 12px; background: var(--verde); color: #fff; font-weight: 800; font-size: 0.78rem; padding: 4px 10px; border-radius: 999px; }
+.loja { display: flex; flex-direction: column; gap: 10px; }
+.links-legais { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; margin-top: 8px; }
+.links-legais a { color: var(--roxo); font-weight: 800; padding: 10px 0; }
+.letra-miuda { font-size: 0.8rem; text-align: center; }
