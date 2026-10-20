@@ -1,0 +1,36 @@
+{
+  "name": "trato",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.10"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c blue,magenta \"tsx watch src/server/index.ts\" \"vite\"",
+    "build": "vite build",
+    "start": "tsx src/server/index.ts",
+    "icones": "node scripts/icones.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.5",
+    "better-sqlite3": "^13.0.3",
+    "dotenv": "^18.0.8",
+    "hono": "^4.13.13",
+    "sharp": "^0.35.5",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^10.0.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
+  }
+}
