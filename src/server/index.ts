@@ -40,8 +40,12 @@ if (fs.existsSync(dist)) {
   app.use('/sw.js', async (c, next) => { await next(); c.header('cache-control', 'no-cache'); });
   // páginas públicas (a loja exige links abertos, sem login): /privacidade, /termos, /cancelamento, /excluir-conta
   for (const p of PAGINAS_LEGAIS) app.get(`/${p}`, (c) => c.html(fs.readFileSync(path.join(dist, `${p}.html`), 'utf8')));
+  // /app sem barra: o app usa caminhos relativos ao /app/
+  app.get('/app', (c) => c.redirect('/app/', 301));
   app.use('/*', serveStatic({ root: path.relative(process.cwd(), dist) }));
   // lido a cada pedido: um build novo (com outros nomes de arquivo) vale sem reiniciar o servidor
+  app.get('/app/*', (c) => c.html(fs.readFileSync(path.join(dist, 'app/index.html'), 'utf8')));
+  // o resto é a landing (raiz do site)
   app.get('*', (c) => c.html(fs.readFileSync(path.join(dist, 'index.html'), 'utf8')));
 }
 

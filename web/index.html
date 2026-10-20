@@ -1,23 +1,204 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Trato — rotina das crianças</title>
-    <meta name="description" content="A rotina das crianças com missões, moedinhas e um pet que cresce junto." />
-    <meta name="theme-color" content="#FBF6EE" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/icone.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/icone-180.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Trato" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Trato · A rotina das crianças vira missão</title>
+  <meta name="description" content="App de rotina infantil: as tarefas viram missões, a criança ganha moedinhas e cuida de um pet que cresce junto. Sem anúncios. 7 dias grátis no Android." />
+  <meta name="theme-color" content="#7C5CFC" />
+  <link rel="canonical" href="%VITE_SITE_URL%/" />
+  <link rel="icon" href="/icone.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icone-180.png" />
+  <!-- Open Graph: o link compartilhado no WhatsApp e no Instagram -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:site_name" content="Trato" />
+  <meta property="og:title" content="Trato · A rotina das crianças vira missão" />
+  <meta property="og:description" content="Missões, moedinhas e um pet que cresce junto. Menos cobrança, mais autonomia. 7 dias grátis." />
+  <meta property="og:url" content="%VITE_SITE_URL%/" />
+  <meta property="og:image" content="%VITE_SITE_URL%/og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Logo do Trato e três mascotes sorrindo" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "MobileApplication",
+    "name": "Trato: rotina das crianças",
+    "operatingSystem": "ANDROID",
+    "applicationCategory": "LifestyleApplication",
+    "inLanguage": "pt-BR",
+    "description": "App de rotina infantil com missões, moedinhas, recompensas combinadas e um pet virtual que cresce junto com a criança.",
+    "url": "%VITE_SITE_URL%/",
+    "image": "%VITE_SITE_URL%/og.jpg",
+    "installUrl": "%VITE_LINK_LOJA%",
+    "offers": [
+      { "@type": "Offer", "name": "Plano Família mensal", "price": "7.99", "priceCurrency": "BRL" },
+      { "@type": "Offer", "name": "Plano Família anual", "price": "59.88", "priceCurrency": "BRL" }
+    ]
+  }
+  </script>
+  <!-- PWA já instalado: abre direto o app, não a landing -->
+  <script>if (matchMedia('(display-mode: standalone)').matches) location.replace('/app/');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body class="landing">
+  <header class="topo-site">
+    <div class="faixa">
+      <a class="logo" href="/" aria-label="Trato, início"><span class="a">tra</span><span class="b">to</span></a>
+      <a class="cta cta-pequeno" href="%VITE_LINK_LOJA%" rel="noopener">Baixar grátis</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. Hero -->
+    <section class="hero">
+      <div class="faixa hero-grade">
+        <div class="hero-texto">
+          <p class="selo-topo">App de rotina infantil · Android</p>
+          <h1>A rotina das crianças vira <span class="grifo">missão</span>. E elas querem cumprir.</h1>
+          <p class="sub">Você combina as tarefas do dia. A criança cumpre, ganha moedinhas e cuida de um pet que cresce junto com ela. Menos cobrança, mais autonomia.</p>
+          <a class="cta" href="%VITE_LINK_LOJA%" rel="noopener"><span class="cta-icone" aria-hidden="true">↓</span><span><small>Disponível na</small>Google Play</span></a>
+          <p class="nota">7 dias grátis · Sem anúncios · Cancele quando quiser</p>
+        </div>
+        <div class="hero-celular">
+          <div class="celular" aria-label="Demonstração do app: toque no pet e no botão Fiz!">
+            <div class="celular-tela" id="ilha-celular"></div>
+          </div>
+          <p class="dica">Experimente: toque no pet e no “Fiz!”</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. A dor -->
+    <section class="dor">
+      <div class="faixa estreita">
+        <h2>Já pediu dez vezes para escovar os dentes hoje?</h2>
+        <p>Lembrar, repetir, negociar… e a manhã vira uma briga. A criança não esquece por mal: ela só ainda não enxerga a rotina como algo dela.</p>
+        <p class="frase-forte">O Trato muda o jogo: em vez de ouvir “vai escovar os dentes”, ela vê a missão, faz e corre para contar.</p>
+      </div>
+    </section>
+
+    <!-- 3. Como funciona -->
+    <section class="como" id="como-funciona">
+      <div class="faixa">
+        <h2>Como funciona</h2>
+        <ol class="passos-site">
+          <li><span class="num">1</span><strong>Você cria as missões</strong><p>Escolha das sugestões prontas ou crie as suas, com dias, horário e quantos pontos valem.</p></li>
+          <li><span class="num">2</span><strong>A criança cumpre e cuida do pet</strong><p>Ela vê o que tem para agora, toca em “Fiz!” e ganha moedinhas. O pet cresce, come e comemora junto.</p></li>
+          <li><span class="num">3</span><strong>A família comemora</strong><p>As moedinhas viram prêmios combinados em casa: um passeio, o filme da noite, um sorvete no fim de semana.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 4. O pet -->
+    <section class="pet-sec" id="o-pet">
+      <div class="faixa">
+        <h2>Um pet para chamar de seu</h2>
+        <p class="sub-sec">5 espécies, 5 níveis de evolução e uma coleção para completar. Toque, alimente e dê banho.</p>
+        <div id="ilha-pet" class="ilha-pet"></div>
+      </div>
+    </section>
+
+    <!-- 5. Recursos -->
+    <section class="recursos">
+      <div class="faixa">
+        <h2>Tudo o que a rotina precisa</h2>
+        <ul class="grade-recursos">
+          <li><span>📸</span><strong>Missão com foto ou aprovação</strong><p>Escolha: a criança marca sozinha, você aprova ou ela manda a foto da cama arrumada.</p></li>
+          <li><span>🎁</span><strong>Prêmios combinados</strong><p>Vocês decidem o que as moedinhas compram. A criança junta e pede; você aprova.</p></li>
+          <li><span>🔥</span><strong>Conquistas e dias seguidos</strong><p>Progresso visível para comemorar a constância, não só o resultado.</p></li>
+          <li><span>📱</span><strong>Um celular ou dois</strong><p>Todos no mesmo aparelho ou cada um no seu: conecte o celular da criança com um código.</p></li>
+          <li><span>🔒</span><strong>PIN do responsável</strong><p>Configurações, aprovações e assinatura ficam protegidas. A criança nunca vê preço.</p></li>
+          <li><span>🚫</span><strong>Sem anúncios</strong><p>Nada de propaganda, rastreador ou venda de dados. Só a rotina da sua família.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 6. Para quem educa -->
+    <section class="educa">
+      <div class="faixa estreita">
+        <h2>Feito para quem educa</h2>
+        <ul class="lista-educa">
+          <li><strong>Autonomia no ritmo dela.</strong> A criança enxerga o que tem para fazer e decide fazer, sem depender de um adulto lembrando.</li>
+          <li><strong>Rotina visual.</strong> Ícones grandes, pouco texto e uma bolinha por missão: dá para entender antes mesmo de ler bem.</li>
+          <li><strong>Tarefa não vira cobrança.</strong> O pet fica triste quando algo atrasa, mas ninguém leva bronca do app. A conversa continua sendo de vocês.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 7. Preço -->
+    <section class="preco" id="preco">
+      <div class="faixa">
+        <h2>Preço de um sorvete por mês</h2>
+        <p class="sub-sec">Comece grátis. Assine só se fizer sentido para a sua família.</p>
+        <div class="planos">
+          <div class="plano">
+            <h3>Grátis</h3>
+            <p class="valor">R$ 0</p>
+            <ul><li>1 criança</li><li>Missões ilimitadas</li><li>Pet, prêmios e conquistas</li></ul>
+          </div>
+          <div class="plano plano-destaque">
+            <span class="selo-plano">Mais escolhido · economize 37%</span>
+            <h3>Plano Família anual</h3>
+            <p class="valor">R$ 4,99<small>/mês</small></p>
+            <p class="valor-obs">R$ 59,88 cobrados por ano</p>
+            <ul><li>Até 6 crianças</li><li>Missões ilimitadas</li><li>7 dias grátis para começar</li></ul>
+          </div>
+          <div class="plano">
+            <h3>Plano Família mensal</h3>
+            <p class="valor">R$ 7,99<small>/mês</small></p>
+            <ul><li>Até 6 crianças</li><li>Missões ilimitadas</li><li>7 dias grátis para começar</li></ul>
+          </div>
+        </div>
+        <p class="nota-preco">Assinatura pela Google Play, com renovação automática. Cancele quando quiser em Play Store → Pagamentos e assinaturas.</p>
+        <a class="cta" href="%VITE_LINK_LOJA%" rel="noopener"><span class="cta-icone" aria-hidden="true">↓</span><span><small>Disponível na</small>Google Play</span></a>
+      </div>
+    </section>
+
+    <!-- 8. FAQ -->
+    <section class="faq" id="duvidas">
+      <div class="faixa estreita">
+        <h2>Perguntas frequentes</h2>
+        <details><summary>Tem para iPhone?</summary><p>Ainda não. Por enquanto o Trato está na Google Play, para Android. A versão para iPhone e iPad está nos planos.</p></details>
+        <details><summary>Preciso de dois celulares?</summary><p>Não. Dá para usar tudo num celular só: a criança entra pelo perfil dela e você entra na sua área com o PIN. Se preferir, cada um usa o seu e você aprova as missões do seu celular.</p></details>
+        <details><summary>A foto é obrigatória?</summary><p>Não. Você escolhe, missão por missão, se a criança marca sozinha, se precisa da sua aprovação ou se manda uma foto da tarefa feita. As fotos são privadas: só você vê.</p></details>
+        <details><summary>Como cancelo a assinatura?</summary><p>Na Play Store: toque na sua foto → Pagamentos e assinaturas → Assinaturas → Trato → Cancelar. Se cancelar durante os 7 dias grátis, não paga nada. <a href="/cancelamento">Veja todos os detalhes</a>.</p></details>
+        <details><summary>É seguro para o meu filho?</summary><p>Sim. A criança usa o app sem e-mail nem senha, não vê preços, não conversa com ninguém e não há anúncios nem rastreadores. Pedimos o mínimo de dados e seguimos a LGPD. <a href="/privacidade">Leia a política de privacidade</a>.</p></details>
+        <details><summary>O Trato é um jogo?</summary><p>Não. É um app de rotina. O pet e as moedinhas deixam tudo mais leve e visual, mas quem combina as regras e os prêmios é a família.</p></details>
+      </div>
+    </section>
+
+    <!-- 9. CTA final -->
+    <section class="final">
+      <div class="faixa estreita">
+        <h2>Pequenos tratos, grandes conquistas.</h2>
+        <p>Monte a primeira rotina em poucos minutos. Os 7 primeiros dias são por nossa conta.</p>
+        <a class="cta cta-claro" href="%VITE_LINK_LOJA%" rel="noopener"><span class="cta-icone" aria-hidden="true">↓</span><span><small>Disponível na</small>Google Play</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape-site">
+    <div class="faixa">
+      <a class="logo" href="/"><span class="a">tra</span><span class="b">to</span></a>
+      <nav aria-label="Links">
+        <a href="/privacidade">Privacidade</a>
+        <a href="/termos">Termos de uso</a>
+        <a href="/cancelamento">Cancelamento</a>
+        <a href="/excluir-conta">Excluir conta</a>
+        <a href="mailto:[E-MAIL DE SUPORTE]">Contato</a>
+        <a href="[INSTAGRAM]" rel="noopener">Instagram</a>
+        <a href="/app/">Usar no navegador</a>
+      </nav>
+      <p class="miuda">Google Play é marca da Google LLC. © Trato · [RAZÃO SOCIAL OU NOME DO RESPONSÁVEL LEGAL]</p>
+    </div>
+  </footer>
+
+  <button id="botao-som" class="botao-som" aria-pressed="false">🔇 Som</button>
+  <script type="module" src="/src/landing.tsx"></script>
+</body>
 </html>

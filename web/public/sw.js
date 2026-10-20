@@ -1,6 +1,7 @@
-// Service worker do Trato: a tela abre mesmo sem internet (os dados vêm da API, que precisa de conexão).
-const CACHE = 'trato-v1';
-const BASE = ['/', '/manifest.webmanifest', '/icone.svg', '/icone-192.png'];
+// Service worker do app web do Trato (escopo /app/): a tela abre mesmo sem internet (os dados vêm da API).
+// A landing (/) e as páginas legais ficam fora do escopo e sempre vêm da rede.
+const CACHE = 'trato-v2';
+const BASE = ['/app/', '/manifest.webmanifest', '/icone.svg', '/icone-192.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASE)).then(() => self.skipWaiting()));
@@ -15,9 +16,10 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (req.method !== 'GET' || url.pathname.startsWith('/api/')) return;
 
-  // navegação: tenta a rede (versão nova), cai no cache sem internet
+  // navegação do app: tenta a rede (versão nova), cai no cache sem internet
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).then((r) => { caches.open(CACHE).then((c) => c.put('/', r.clone())); return r; }).catch(() => caches.match('/')));
+    if (!url.pathname.startsWith('/app')) return;
+    e.respondWith(fetch(req).then((r) => { const copia = r.clone(); caches.open(CACHE).then((c) => c.put('/app/', copia)); return r; }).catch(() => caches.match('/app/')));
     return;
   }
   // arquivos (js, css, fontes, ícones): cache primeiro, atualiza por trás

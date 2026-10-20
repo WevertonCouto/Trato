@@ -11,5 +11,11 @@ carregarSessao().finally(() => createRoot(document.getElementById('root')!).rend
 
 // o service worker é só da versão web (PWA); no app nativo os arquivos já vêm dentro do pacote
 if (!nativo && 'serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  window.addEventListener('load', async () => {
+    // versões antigas registravam o SW na raiz (/); agora o app mora em /app/ e a raiz é a landing
+    for (const r of await navigator.serviceWorker.getRegistrations().catch(() => [])) {
+      if (new URL(r.scope).pathname === '/') r.unregister();
+    }
+    navigator.serviceWorker.register('/sw.js', { scope: '/app/' }).catch(() => {});
+  });
 }

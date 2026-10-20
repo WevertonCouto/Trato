@@ -12,7 +12,11 @@ import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { nativo } from './plataforma.ts';
 
 const CHAVE = 'trato.som';
+// a landing começa calada (som desligado por padrão) sem mexer na preferência guardada do app
+let silenciado = false;
+export const silenciar = (sim: boolean) => { silenciado = sim; };
 export function somLigado() {
+  if (silenciado) return false;
   try { return localStorage.getItem(CHAVE) !== 'nao'; } catch { return true; }
 }
 export function ligarSom(ligado: boolean) {
@@ -204,7 +208,8 @@ export function vibrar(v: Vibracao) {
       : v === 'erro' ? Haptics.notification({ type: NotificationType.Warning })
       : Haptics.impact({ style: v === 'medio' ? ImpactStyle.Medium : ImpactStyle.Light });
     p.catch(() => {});
-  } else if ('vibrate' in navigator) {
+  } else if ('vibrate' in navigator && (navigator as any).userActivation?.hasBeenActive !== false) {
+    // o navegador recusa (e avisa no console) vibração antes do primeiro toque de verdade
     navigator.vibrate(v === 'sucesso' ? [15, 50, 25] : v === 'erro' ? [25, 60, 25] : v === 'medio' ? 20 : 8);
   }
 }
